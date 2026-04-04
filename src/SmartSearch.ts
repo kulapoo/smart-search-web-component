@@ -6,49 +6,15 @@ import { DisabledMixin } from "@/mixins/DisabledMixin"
 import type { Constructor } from "@/mixins/types"
 import { h } from "@/utils/h"
 import { SearchResultList, type SearchResults } from "@/components/SearchResult/SearchResultList"
-import type { SearchResult } from "@/components/SearchResult/SearchResultItem"
-import type { FilterOptionsOptions } from "@/components/Filter/FilterOptions"
-import { fireEvent } from "@/utils/events"
 import { smartSearchStyles } from "@/styles/styles"
+import { SmartSearchEventHandlerMixin, type SmartSearchEventHandlers } from "@/SmartSearchEventHandlerMixin"
+import { DefaultSmartSearchAttrs, SmartSearchEventNames, type SmartSearchAttrs } from "@/SmartSearchConstants"
 
-const SmartSearchBase = compose(Component, DisabledMixin) as Constructor<Component>
+export { SmartSearchEventNames } from "@/SmartSearchConstants"
 
-export type SmartSearchAttrs = {
-  placeholder?: string
-  debounce?: number
-  name?: string
-  id?: string
-  filters?: FilterOptionsOptions[]
-  clearable?: boolean
-  options?: SearchResult[]
-  fetchDataOn?: "input" | "blur" | "focus" | "all"
-  datasource: string
-}
-
-const DefaultSmartSearchAttrs = {
-  placeholder: "Search",
-  debounce: 300,
-  name: "search",
-  id: undefined,
-  filters: [],
-  clearable: true,
-  options: [],
-  fetchDataOn: "input",
-  datasource: "",
-} as SmartSearchAttrs
-
-export const SmartSearchEventNames = {
-  FILTER_CHANGE: "ss-filter-change",
-  INPUT_CHANGE: "ss-input-change",
-  MENU_CLOSE: "ss-menu-close",
-  MENU_OPEN: "ss-menu-open",
-  MENU_SELECT: "ss-menu-select",
-  MENU_HOVER: "ss-menu-hover",
-  MENU_BLUR: "ss-menu-blur",
-  MENU_KEYDOWN: "ss-menu-keydown",
-  MENU_KEYUP: "ss-menu-keyup",
-  MENU_KEYPRESS: "ss-menu-keypress",
-} as const
+const SmartSearchBase = compose(Component, DisabledMixin, SmartSearchEventHandlerMixin) as Constructor<
+  Component & SmartSearchEventHandlers
+>
 
 export class SmartSearch extends SmartSearchBase {
   static tagName = "ss-smart-search"
@@ -65,7 +31,7 @@ export class SmartSearch extends SmartSearchBase {
 
   // elements instances
   #inputInstance!: Input
-  #menuInstance!: Menu
+  menuInstance!: Menu
   #searchResultListInstance!: SearchResultList
 
   protected configureAria(): void {
@@ -119,36 +85,6 @@ export class SmartSearch extends SmartSearchBase {
     })
   }
 
-  /* event handlers */
-  #handleMenuOpen = (): void => {
-    this.#menuInstance.show()
-  }
-
-  #handleMenuClose = (): void => {
-    this.#menuInstance.hide()
-  }
-
-  #handleInput = (value: string, sourceEvent: Event | null): void => {
-    fireEvent(this, SmartSearchEventNames.INPUT_CHANGE, { value, sourceEvent })
-  }
-
-  #handleInputBlur = (): void => {
-    this.#handleMenuClose()
-  }
-
-  #handleInputFocus = (): void => {
-    this.#handleMenuOpen()
-  }
-
-  #handleClear = (): void => {
-    this.#handleMenuClose()
-  }
-
-  #handleSelect = (value: string, result: SearchResult, sourceEvent: Event): void => {
-    fireEvent(this, SmartSearchEventNames.MENU_SELECT, { value, result, sourceEvent })
-    this.#handleMenuClose()
-  }
-
   /* public methods */
   loadResults(results: SearchResults, query: string): void {
     this.#searchResultListInstance.update(results, query)
@@ -161,8 +97,8 @@ export class SmartSearch extends SmartSearchBase {
 
     const inputOpts = {
       name: name ?? "search",
-      onInput: this.#handleInput,
-      onClear: this.#handleClear,
+      onInput: this.handleInput,
+      onClear: this.handleClear,
     }
     this.#inputInstance = new Input(inputOpts)
 
@@ -171,27 +107,27 @@ export class SmartSearch extends SmartSearchBase {
 
     this.#inputInstance.setAttribute("clearable", "")
 
-    const menuOpts = { anchor: this.#inputInstance, onClose: this.#handleMenuClose } as MenuOptions
-    this.#menuInstance = new Menu(menuOpts)
+    const menuOpts = { anchor: this.#inputInstance, onClose: this.handleMenuClose } as MenuOptions
+    this.menuInstance = new Menu(menuOpts)
 
-    this.#searchResultListInstance = new SearchResultList({ onSelect: this.#handleSelect })
+    this.#searchResultListInstance = new SearchResultList({ onSelect: this.handleSelect })
 
-    this.#menuInstance.appendChild(this.#searchResultListInstance)
-    this.#menuInstance.show()
-    const rootChildren = [this.#inputInstance, this.#menuInstance]
+    this.menuInstance.appendChild(this.#searchResultListInstance)
+    this.menuInstance.show()
+    const rootChildren = [this.#inputInstance, this.menuInstance]
 
     return h("div", { class: SmartSearch.className }, ...rootChildren)
   }
 
   protected onConnect(): void {
     this.shadowRoot!.adoptedStyleSheets = smartSearchStyles
-    this.addEventListener(SmartSearchEventNames.MENU_CLOSE, this.#handleMenuClose as EventListener)
-    this.addEventListener(SmartSearchEventNames.MENU_OPEN, this.#handleMenuOpen as EventListener)
+    this.addEventListener(SmartSearchEventNames.MENU_CLOSE, this.handleMenuClose as EventListener)
+    this.addEventListener(SmartSearchEventNames.MENU_OPEN, this.handleMenuOpen as EventListener)
   }
 
   protected onDisconnect(): void {
-    this.removeEventListener(SmartSearchEventNames.MENU_CLOSE, this.#handleMenuClose as EventListener)
-    this.removeEventListener(SmartSearchEventNames.MENU_OPEN, this.#handleMenuOpen as EventListener)
+    this.removeEventListener(SmartSearchEventNames.MENU_CLOSE, this.handleMenuClose as EventListener)
+    this.removeEventListener(SmartSearchEventNames.MENU_OPEN, this.handleMenuOpen as EventListener)
   }
 
   attributeChangedCallback(name: string, _oldValue: string | null, newValue: string | null): void {
