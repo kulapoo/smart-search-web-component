@@ -1,6 +1,6 @@
 import { Component } from "@/components/Component"
 import { SearchResultItem, type SearchResult } from "@/components/SearchResult/SearchResultItem"
-import type { ResultRenderer } from "@/types/datasource"
+import type { ResultItemRendererFn } from "@/types/datasource"
 import { highlight } from "@/utils/highlight"
 import { groupFlatItems } from "@/utils/group-items"
 import { h } from "@/utils/h"
@@ -33,13 +33,13 @@ export class SearchResultList extends Component {
 
   #onSelect: SearchResultListOptions["onSelect"]
   #itemMap = new Map<string, SearchResultItem>()
-  #resultRenderer: ResultRenderer | null = null
+  #resultItemRenderer: ResultItemRendererFn | null = null
 
-  set resultRenderer(fn: ResultRenderer | null) {
-    this.#resultRenderer = fn
+  set resultItemRenderer(fn: ResultItemRendererFn | null) {
+    this.#resultItemRenderer = fn
   }
-  get resultRenderer(): ResultRenderer | null {
-    return this.#resultRenderer
+  get resultItemRenderer(): ResultItemRendererFn | null {
+    return this.#resultItemRenderer
   }
 
   constructor({ onSelect }: SearchResultListOptions) {
@@ -61,7 +61,7 @@ export class SearchResultList extends Component {
       const result = incoming.get(value)
       if (result) {
         el.update(result, query)
-        if (this.#resultRenderer) {
+        if (this.#resultItemRenderer) {
           el.replaceChildren(this.#renderContent(result, query))
         }
       } else {
@@ -118,8 +118,8 @@ export class SearchResultList extends Component {
   }
 
   #renderContent(result: SearchResult, query: string): Node {
-    if (this.#resultRenderer) {
-      const content = this.#resultRenderer(result, query)
+    if (this.#resultItemRenderer) {
+      const content = this.#resultItemRenderer(result, query)
       return typeof content === "string" ? document.createTextNode(content) : content
     }
     return highlight(result.label, query)

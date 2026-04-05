@@ -1,6 +1,11 @@
 import type { SearchResult } from "@/components/SearchResult/SearchResultItem"
 import type { SearchResults } from "@/components/SearchResult/SearchResultList"
 
+export type FilterOptionFn<T extends Record<string, unknown> = Record<string, unknown>> = (
+  option: SearchResult<T>,
+  query: string,
+) => boolean
+
 export type DataAdapter<T extends Record<string, unknown> = Record<string, unknown>> = (
   query: string,
   signal: AbortSignal,
@@ -11,7 +16,7 @@ export type ResponseTransformer<T extends Record<string, unknown> = Record<strin
   query: string,
 ) => SearchResults<T>
 
-export type ResultRenderer<T extends Record<string, unknown> = Record<string, unknown>> = (
+export type ResultItemRendererFn<T extends Record<string, unknown> = Record<string, unknown>> = (
   result: SearchResult<T>,
   query: string,
 ) => Node | string

@@ -137,19 +137,18 @@ export class SmartSearch extends SmartSearchBase implements WithLoadData, WithGe
   }
 
   loadResults(results: SearchResults, query: string): void {
+    const { openMenuOnLoadResults } = this.getAttrs()
+
     this.#searchResultListInstance.update(results, query)
-    const count = this.#countResults(results)
+    const count = isGroupedResults(results)
+      ? results.reduce((sum, group) => sum + group.options.length, 0)
+      : results.length
     this.menuInstance.empty = count === 0
     this.menuInstance.loading = false
-    this.#announce(count === 0 ? "No results found" : `${count} result${count === 1 ? "" : "s"} available`)
-  }
-
-  #countResults(results: SearchResults): number {
-    if (!results.length) return 0
-    if (isGroupedResults(results)) {
-      return results.reduce((sum, group) => sum + group.options.length, 0)
+    if (openMenuOnLoadResults && count > 0) {
+      this.menuInstance.show()
     }
-    return results.length
+    this.#announce(count === 0 ? "No results found" : `${count} result${count === 1 ? "" : "s"} available`)
   }
 
   #configureLiveRegion() {
@@ -166,6 +165,16 @@ export class SmartSearch extends SmartSearchBase implements WithLoadData, WithGe
     requestAnimationFrame(() => {
       this.#liveRegion.textContent = message
     })
+  }
+
+  override set resultItemRenderer(fn: DataPipelineHost["resultItemRenderer"]) {
+    super.resultItemRenderer = fn
+    if (this.#searchResultListInstance) {
+      this.#searchResultListInstance.resultItemRenderer = fn
+    }
+  }
+  override get resultItemRenderer(): DataPipelineHost["resultItemRenderer"] {
+    return super.resultItemRenderer
   }
 
   /* keyboard navigation */
@@ -247,16 +256,6 @@ export class SmartSearch extends SmartSearchBase implements WithLoadData, WithGe
     if (attrs.options?.length) {
       this.options = attrs.options
     }
-  }
-
-  override set resultRenderer(fn: DataPipelineHost["resultRenderer"]) {
-    super.resultRenderer = fn
-    if (this.#searchResultListInstance) {
-      this.#searchResultListInstance.resultRenderer = fn
-    }
-  }
-  override get resultRenderer(): DataPipelineHost["resultRenderer"] {
-    return super.resultRenderer
   }
 
   attributeChangedCallback(name: string, _oldValue: string | null, newValue: string | null): void {
