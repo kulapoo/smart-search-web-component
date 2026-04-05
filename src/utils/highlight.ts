@@ -1,15 +1,15 @@
 // simplified version of highlight.js - https://github.com/highlightjs/highlight.js/blob/main/src/highlight.js
 
-export function highlight(text: string, query: string): DocumentFragment {
+export function highlight(text: string, searchTerm: string): DocumentFragment {
   const fragment = document.createDocumentFragment()
 
-  if (!query.trim()) {
+  if (!searchTerm.trim()) {
     fragment.appendChild(document.createTextNode(text))
     return fragment
   }
 
   // Escape regex metacharacters to prevent ReDoS
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  const escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
   const parts = text.split(new RegExp(`(${escaped})`, "gi"))
 
   for (let i = 0; i < parts.length; i++) {

@@ -3,8 +3,11 @@ import { Input } from "@/components/Input/Input"
 import { Menu } from "@/components/Menu/Menu"
 import { SearchResultList } from "@/components/SearchResult/SearchResultList"
 import { SearchResultItem, type SearchResult } from "@/components/SearchResult/SearchResultItem"
-import { FilterOption } from "@/components/Filter/FilterOption"
+import { FilterOption, type FilterOptionData } from "@/components/Filter/FilterOption"
 import { FilterOptions } from "@/components/Filter/FilterOptions"
+import type { FilterItemRendererFn } from "@/types/datasource"
+
+export type { FilterOptionData, FilterItemRendererFn }
 
 customElements.define(Input.tagName, Input)
 customElements.define(Menu.tagName, Menu)
@@ -37,10 +40,23 @@ window.addEventListener("load", () => {
       value: String(p.id),
       label: p.title,
       description: `$${p.price} · ${p.category}`,
-      group: p.category,
+      // group: p.category,
       metadata: { price: p.price, description: p.description },
     }))
   }
+
+  // smartSearch.dataAdapter = (requestQuery: Record<string, unknown>) => {
+  //   const {
+
+  //   } = requestQuery
+
+  //   return fetch(`https://dummyjson.com/products/search?${requestQuery}`)
+  //     .then((response) => response.json())
+  //     .then((json) => {
+  //       const { products } = json as DummyJsonResponse
+  //       return products
+  //     })
+  // }
 
   smartSearch.addEventListener("ss-input-change", (e) => {
     console.log("input change", (e as CustomEvent<{ value: string; sourceEvent: Event }>).detail)

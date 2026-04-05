@@ -1,50 +1,61 @@
 import { Component } from "@/components/Component"
-import { FilterOption, type FilterOptionConfig } from "./FilterOption"
+import { FilterOption, type FilterOptionData } from "./FilterOption"
+import type { FilterItemRendererFn } from "@/types/datasource"
 
 export interface FilterOptionsOptions {
-  options: FilterOptionConfig[]
-  onChange: (e: Event) => void
+  options: FilterOptionData[]
+  onChange: (e: CustomEvent) => void
+  renderFn?: FilterItemRendererFn
 }
 
 export class FilterOptions extends Component {
   static tagName = "ss-filter-options"
   static className = "ss-filter-options"
+  #renderFn: FilterItemRendererFn | undefined
+  #selected: string[] = []
+  #options: FilterOptionData[] = []
 
-  #onChange: FilterOptionsOptions["onChange"]
-  #itemMap = new Map<string, FilterOption>()
-
-  constructor({ options, onChange }: FilterOptionsOptions) {
+  #onChange: FilterOptionsOptions["onChange"] 
+  constructor({ options, onChange, renderFn }: FilterOptionsOptions) {
     super()
+    this.#renderFn = renderFn
     this.#onChange = onChange
-    for (const option of options) {
-      this.#itemMap.set(option.value, new FilterOption({ ...option, onChange }))
-    }
+    this.update(options)
   }
 
-  update(options: FilterOptionConfig[]): void {
-    const incoming = new Map(options.map((o) => [o.value, o]))
-
-    // Remove stale
-    for (const [value] of this.#itemMap) {
-      if (!incoming.has(value)) this.#itemMap.delete(value)
+  #handleChange = (e: CustomEvent) => {
+    const el = e.currentTarget as FilterOption
+    const value = el.getAttribute("value") ?? ""
+    if (this.#selected.includes(value)) {
+      this.#selected = this.#selected.filter((v) => v !== value)
+      el.active = false
+    } else {
+      this.#selected.push(value)
+      el.active = true
     }
+    this.#onChange(new CustomEvent("change", { detail: { selected: this.#selected } }))
+  }
 
-    // Update existing, create new
-    for (const [value, config] of incoming) {
-      if (this.#itemMap.has(value)) {
-        this.#itemMap.get(value)!.setAttribute("label", config.label)
-        this.#itemMap.get(value)!.setAttribute("type", config.type)
-      } else {
-        this.#itemMap.set(value, new FilterOption({ ...config, onChange: this.#onChange }))
-      }
-    }
+  set renderFn(fn: FilterItemRendererFn | undefined) {
+    this.#renderFn = fn
+    this.update(this.#options)
+  }
 
-    // Rebuild DOM in order
-    this.replaceChildren()
-    for (const option of options) {
-      const el = this.#itemMap.get(option.value)
-      if (el) this.appendChild(el)
-    }
+  getActiveFilters(): Array<{ field: string; value: string }> {
+    return this.#options
+      .filter((o) => this.#selected.includes(o.value))
+      .map((o) => ({ field: o.field, value: o.value }))
+  }
+
+  update(options: FilterOptionData[]): void {
+    this.#options = options
+    this.replaceChildren(
+      ...options.map((o) => {
+        const el = new FilterOption({ ...o, onChange: this.#handleChange, renderFn: this.#renderFn })
+        el.active = this.#selected.includes(o.value)
+        return el
+      }),
+    )
   }
 
   protected configureAria(): void {
@@ -54,9 +65,6 @@ export class FilterOptions extends Component {
 
   protected render(): HTMLElement {
     this.classList.add(FilterOptions.className)
-    for (const el of this.#itemMap.values()) {
-      this.appendChild(el)
-    }
     return this
   }
 }

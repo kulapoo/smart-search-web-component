@@ -6,19 +6,56 @@ import { ResultCache } from "@/utils/result-cache"
 import { fireEvent } from "@/utils/events"
 import { SmartSearchEventNames } from "@/SmartSearchConstants"
 
-export interface DataPipelineHost {
+export interface SmartSearchDataPipelineHost {
   dataAdapter: DataAdapter | null
   transformResponse: ResponseTransformer
   resultItemRenderer: ResultItemRendererFn | null
   filterOption: FilterOptionFn | null
   options: SearchResults
   hasOptions: boolean
-  loadData(query?: string): Promise<void>
+  loadData(searchTerm: string, filters?: Array<{ field: string; value: string }>): Promise<void>
   clearCache(): void
 }
 
-export function DataPipelineMixin<T extends Constructor<HTMLElement>>(Base: T) {
-  return class DataPipelineElement extends Base implements DataPipelineHost {
+/** Same grouping as URL params: duplicate fields → `field[0]=…&field[1]=…` */
+export function groupFiltersByField(filters: Array<{ field: string; value: string }>): Map<string, string[]> {
+  const grouped = new Map<string, string[]>()
+  for (const f of filters) {
+    const existing = grouped.get(f.field)
+    if (existing) existing.push(f.value)
+    else grouped.set(f.field, [f.value])
+  }
+  return grouped
+}
+
+function metadataValueMatchesAny(value: unknown, allowed: string[]): boolean {
+  if (value == null) return false
+  if (Array.isArray(value)) {
+    return value.some((item) => allowed.includes(String(item)))
+  }
+  return allowed.includes(String(value))
+}
+
+export function composeQueryString(
+  searchTerm: string,
+  filters: Array<{ field: string; value: string }>,
+): string {
+  const parts = [`q=${searchTerm}`]
+
+  const grouped = groupFiltersByField(filters)
+  for (const [field, values] of grouped) {
+    if (values.length === 1) {
+      parts.push(`${encodeURIComponent(field)}=${encodeURIComponent(values[0])}`)
+    } else {
+      values.forEach((v, i) => parts.push(`${encodeURIComponent(field)}[${i}]=${encodeURIComponent(v)}`))
+    }
+  }
+  console.log("parts", parts)
+  return parts.join("&")
+}
+
+export function SmartSearchDataPipelineMixin<T extends Constructor<HTMLElement>>(Base: T) {
+  return class SmartSearchDataPipelineElement extends Base implements SmartSearchDataPipelineHost {
     #dataAdapter: DataAdapter | null = null
     #transformResponse: ResponseTransformer = (r) => r as SearchResults
     #resultItemRenderer: ResultItemRendererFn | null = null
@@ -61,11 +98,11 @@ export function DataPipelineMixin<T extends Constructor<HTMLElement>>(Base: T) {
       const self = this as unknown as {
         menuInstance?: { isOpen: boolean }
         getInputEl?(): HTMLInputElement
-        loadData?(query?: string): Promise<void>
+        loadData?(searchTerm?: string): Promise<void>
       }
       if (self.menuInstance?.isOpen) {
-        const query = self.getInputEl?.()?.value ?? ""
-        self.loadData?.(query)
+        const searchTerm = self.getInputEl?.()?.value ?? ""
+        self.loadData?.(searchTerm)
       }
     }
     get options(): SearchResults {
@@ -80,23 +117,22 @@ export function DataPipelineMixin<T extends Constructor<HTMLElement>>(Base: T) {
       this.#cache.clear()
     }
 
-    async loadData(query?: string): Promise<void> {
+    async loadData(searchTerm: string, filters: Array<{ field: string; value: string }> = []): Promise<void> {
       this.#inflight?.abort()
       this.#inflight = new AbortController()
       const signal = this.#inflight.signal
 
+      const requestQuery = composeQueryString(searchTerm, filters)
       const self = this as unknown as {
         getInputEl?(): HTMLInputElement
         getAttrs?(): { datasource?: string }
         setLoading?(loading: boolean): void
-        loadResults?(results: SearchResults, query: string): void
+        loadResults?(results: SearchResults, searchTerm: string): void
       }
 
-      const q = query ?? self.getInputEl?.()?.value ?? ""
-
-      const cached = this.#cache.get(q)
+      const cached = this.#cache.get(requestQuery)
       if (cached) {
-        self.loadResults?.(cached, q)
+        self.loadResults?.(cached, searchTerm)
         return
       }
 
@@ -113,46 +149,59 @@ export function DataPipelineMixin<T extends Constructor<HTMLElement>>(Base: T) {
         let results: SearchResults
 
         if (hasAdapter) {
-          results = await this.#dataAdapter!(q, signal)
+          results = await this.#dataAdapter!({ searchTerm, ...filters }, signal)
           this.#results = results
         } else if (datasource) {
-          results = await this.#fetchFromDatasource(datasource, q, signal)
+          results = await this.#fetchFromDatasource(datasource, requestQuery, signal)
           this.#results = results
         } else {
-          results = this.#filterOptions(q)
+          results = this.#filterOptions(searchTerm, filters)
         }
 
         if (signal.aborted) return
 
-        this.#cache.set(q, results)
-        self.loadResults?.(results, q)
+        this.#cache.set(requestQuery, results)
+        self.loadResults?.(results, searchTerm)
       } catch (err) {
         if ((err as Error).name === "AbortError") return
-        fireEvent(this, SmartSearchEventNames.LOAD_ERROR, { error: err, query: q })
+        fireEvent(this, SmartSearchEventNames.LOAD_ERROR, { error: err, requestQuery })
         self.setLoading?.(false)
       }
     }
 
-    async #fetchFromDatasource(datasource: string, query: string, signal: AbortSignal): Promise<SearchResults> {
-      const url = datasource.includes("{{query}}")
-        ? datasource.replace("{{query}}", encodeURIComponent(query))
-        : `${datasource}${datasource.includes("?") ? "&" : "?"}q=${encodeURIComponent(query)}`
+    async #fetchFromDatasource(
+      datasource: string,
+      requestQuery: string,
+      signal: AbortSignal,
+    ): Promise<SearchResults> {
+      const url = datasource.includes("{{q}}")
+        ? datasource.replace("{{q}}", requestQuery)
+        : `${datasource}${datasource.includes("?") ? "&" : "?"}${requestQuery}`
 
       const response = await fetch(url, { signal })
       const json = await response.json()
-      return this.#transformResponse(json, query)
+      return this.#transformResponse(json, requestQuery)
     }
 
-    #filterOptions(query: string): SearchResults {
-      const q = query.toLowerCase()
-      if (!q) return this.#results
+    #filterOptions(searchTerm: string, filters: Array<{ field: string; value: string }>): SearchResults {
+      const matchesFilterFields = (o: SearchResult) => {
+        if (filters.length === 0) return true
+        const meta = o.metadata
+        if (!meta) return false
+        const grouped = groupFiltersByField(filters)
+        for (const [field, allowedValues] of grouped) {
+          if (!metadataValueMatchesAny(meta[field], allowedValues)) return false
+        }
+        return true
+      }
 
+      const q = searchTerm.toLowerCase()
       const defaultMatch = (o: SearchResult) =>
-        o.label.toLowerCase().includes(q) || o.description?.toLowerCase().includes(q)
+        !q || o.label.toLowerCase().includes(q) || o.description?.toLowerCase().includes(q)
 
       const match = this.#filterOption
-        ? (o: SearchResult) => this.#filterOption!(o, query)
-        : defaultMatch
+        ? (o: SearchResult) => this.#filterOption!(o, searchTerm, filters)
+        : (o: SearchResult) => matchesFilterFields(o) && defaultMatch(o)
 
       if (isGroupedResults(this.#results)) {
         return (this.#results as SearchResultGroup[])

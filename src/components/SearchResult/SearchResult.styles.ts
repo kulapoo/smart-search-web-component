@@ -29,9 +29,7 @@ export const searchResultListStyles =  `
 
 export const searchResultItemStyles = `
   ss-search-result-item {
-    display: flex;
-    align-items: center;
-    gap: var(--ss-result-gap, 8px);
+    display: block;
     padding: var(--ss-result-padding, 8px 12px);
     border-radius: var(--ss-result-radius, calc(var(--ss-radius, 8px) - 4px));
     color: var(--ss-text);
@@ -48,6 +46,10 @@ export const searchResultItemStyles = `
 
   ss-search-result-item:hover:not([disabled]) {
     background: var(--ss-hover);
+  }
+
+  [data-keyboard-nav] ss-search-result-item:hover:not([active]) {
+    background: transparent;
   }
 
 
@@ -75,7 +77,7 @@ export const searchResultItemStyles = `
     background: var(--ss-mark-bg);
     color: var(--ss-mark-text);
     border-radius: 2px;
-    padding: 0 1px;
+    padding: 0;
   }
 
 

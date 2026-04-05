@@ -3,12 +3,9 @@ import type { SearchResult } from "@/components/SearchResult/SearchResultItem"
 import { fireEvent } from "@/utils/events"
 import type { Constructor } from "@/mixins/types"
 import { SmartSearchEventNames } from "@/SmartSearchConstants"
-import type { WithGetAttrs, WithLoadData } from "./SmartSearch"
-import type { DataPipelineHost } from "./mixins/DataPipelineMixin"
+import type { WithGetAttrs, WithLoadData, WithActiveFilters } from "@/types/traits"
 
-export interface WithInputEl {
-  getInputEl(): HTMLInputElement
-}
+
 
 export interface SmartSearchEventHandlers {
   menuInstance: Menu
@@ -46,7 +43,8 @@ export function SmartSearchEventHandlerMixin<T extends Constructor<HTMLElement>>
       fireEvent(this, SmartSearchEventNames.INPUT_CHANGE, { value, sourceEvent })
 
       if (attrs.fetchDataOn === "input" || attrs.fetchDataOn === "input-focus") {
-        ;(this as unknown as WithLoadData).loadData(value)
+        const activeFilters = (this as unknown as WithActiveFilters).getActiveFilters()
+        ;(this as unknown as WithLoadData).loadData(value, activeFilters)
       }
 
       if (attrs.openMenuOnInput) {
@@ -75,10 +73,11 @@ export function SmartSearchEventHandlerMixin<T extends Constructor<HTMLElement>>
       fireEvent(this, SmartSearchEventNames.INPUT_FOCUS, { value, sourceEvent })
       const attrs = (this as unknown as WithGetAttrs).getAttrs()
       if (attrs.fetchDataOn === "focus" || attrs.fetchDataOn === "input-focus") {
-        ;(this as unknown as WithLoadData).loadData(value)
+        const activeFilters = (this as unknown as WithActiveFilters).getActiveFilters()
+        ;(this as unknown as WithLoadData).loadData(value, activeFilters)
       }
 
-      if ((this as unknown as DataPipelineHost).hasOptions && attrs.openMenuOnFocus) {
+      if (attrs.openMenuOnFocus) {
         this.menuInstance.show()
       }
     }

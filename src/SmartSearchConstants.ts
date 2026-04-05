@@ -1,4 +1,4 @@
-import type { FilterOptionsOptions } from "@/components/Filter/FilterOptions"
+import type { FilterOptionData } from "@/components/Filter/FilterOption"
 import type { SearchResult } from "@/components/SearchResult/SearchResultItem"
 
 export const SmartSearchEventNames = {
@@ -38,7 +38,7 @@ export type SmartSearchAttrs = {
   debounce?: number
   name?: string
   id?: string
-  filters?: FilterOptionsOptions[]
+  filters?: FilterOptionData[]
   clearable?: boolean
   options?: SearchResult[]
   fetchDataOn?: "input" | "focus" | "" | "input-focus"
@@ -51,10 +51,10 @@ export type SmartSearchAttrs = {
   openMenuOnFocus?: boolean
   openMenuOnInput?: boolean
   openMenuOnLoadResults?: boolean
-  menuMinHeight?: number
+  menuMinHeight?: number | string
 
   // menu positioning / sizing
-  menuMaxHeight?: number
+  menuMaxHeight?: number | string
   menuOffset?: number
   menuPlacement?: string
   menuMatchWidth?: boolean
@@ -76,12 +76,12 @@ export const DefaultSmartSearchAttrs = {
   datasource: "",
   disabled: false,
 
-  closeMenuOnBlur: true,
+  closeMenuOnBlur: false,
   closeMenuOnSelect: true,
   openMenuOnFocus: true,
   openMenuOnLoadResults: true,
   openMenuOnInput: true,
-  menuMinHeight: 200,
+  menuMinHeight: 100,
 
   menuMaxHeight: 360,
   menuOffset: 4,
@@ -89,5 +89,5 @@ export const DefaultSmartSearchAttrs = {
   menuMatchWidth: true,
 
   closeOnEscape: true,
-  closeOnClickOutside: true,
+  closeOnClickOutside: false,
 } as SmartSearchAttrs

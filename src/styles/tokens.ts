@@ -24,7 +24,7 @@ export const tokens = `
     --ss-accent-ring: rgba(37, 99, 235, 0.2);
 
     /* States */
-    --ss-hover: #f7fafc;
+    --ss-hover: #e2e8f0;
     --ss-active: #dbeafe;
 
     /* Chips */

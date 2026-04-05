@@ -11,24 +11,24 @@ export class ResultCache<T extends Record<string, unknown> = Record<string, unkn
     this.#ttl = ttl
   }
 
-  get(query: string): SearchResults<T> | undefined {
-    const entry = this.#map.get(query)
+  get(cacheKey: string): SearchResults<T> | undefined {
+    const entry = this.#map.get(cacheKey)
     if (!entry) return undefined
 
     if (Date.now() - entry.timestamp > this.#ttl) {
-      this.#map.delete(query)
+      this.#map.delete(cacheKey)
       return undefined
     }
 
     return entry.results
   }
 
-  set(query: string, results: SearchResults<T>): void {
+  set(cacheKey: string, results: SearchResults<T>): void {
     if (this.#map.size >= this.#maxSize) {
       const oldest = this.#map.keys().next().value
       if (oldest !== undefined) this.#map.delete(oldest)
     }
-    this.#map.set(query, { results, timestamp: Date.now() })
+    this.#map.set(cacheKey, { results, timestamp: Date.now() })
   }
 
   clear(): void {
