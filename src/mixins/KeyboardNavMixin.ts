@@ -1,11 +1,27 @@
 import type { Constructor } from "@/mixins/types"
 
+export interface KeyboardNavHost {
+  activeIndex: number
+  resetActiveIndex(): void
+  handleKeyboardNav(e: KeyboardEvent): void
+}
+
 export function KeyboardNavMixin<T extends Constructor<HTMLElement>>(Base: T) {
   class KeyboardNavMixinClass extends Base {
     #activeIndex = -1
 
     get activeIndex() {
       return this.#activeIndex
+    }
+
+    resetActiveIndex(): void {
+      if (this.#activeIndex >= 0) {
+        const items = this.getNavigableItems()
+        this.#activeIndex = -1
+        this.onActiveIndexChanged(-1, items)
+      } else {
+        this.#activeIndex = -1
+      }
     }
 
     protected getNavigableItems(): HTMLElement[] {
@@ -23,7 +39,7 @@ export function KeyboardNavMixin<T extends Constructor<HTMLElement>>(Base: T) {
           break
         case "ArrowUp":
           e.preventDefault()
-          this.#activeIndex = Math.max(this.#activeIndex - 1, 0)
+          this.#activeIndex = this.#activeIndex <= 0 ? items.length - 1 : this.#activeIndex - 1
           break
         case "Home":
           e.preventDefault()
