@@ -53,18 +53,14 @@ export class SearchResultItem extends SearchResultItemBase {
   }
 
   protected configureAria(): void {
-    this.setAttribute("role", "menuitem")
+    this.setAttribute("role", "option")
     this.setAttribute("tabindex", "-1")
   }
 
   protected onConnect(): void {
     this.id = this.id || `ss-result-item-${SearchResultItem.#counter++}`
     this.configureAria()
-    this.addEventListener("click", this.#onClick)
-  }
-
-  protected onDisconnect(): void {
-    this.removeEventListener("click", this.#onClick)
+    this.addEventListener("click", this.#onClick, { signal: this.abort.signal })
   }
 
   #onClick = (event: Event) => {

@@ -10,15 +10,12 @@ export const rootStyles = `
   }
 `
 
-export const smartSearchStyles = [
-  tokens,
-  rootStyles,
-  inputStyles,
-  menuStyles,
-  filterOptionsStyles,
-  filterOptionStyles,
-].map((cssText) => {
-  const sheet = new CSSStyleSheet()
-  sheet.replaceSync(cssText)
-  return sheet
-})
+export const createStyles = (styleParams: string[]) => {
+  return [tokens, rootStyles, inputStyles, menuStyles, filterOptionsStyles, filterOptionStyles, ...styleParams].map(
+    (cssText) => {
+      const sheet = new CSSStyleSheet()
+      sheet.replaceSync(cssText)
+      return sheet
+    },
+  )
+}

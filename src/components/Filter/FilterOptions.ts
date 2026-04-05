@@ -47,6 +47,11 @@ export class FilterOptions extends Component {
     }
   }
 
+  protected configureAria(): void {
+    this.setAttribute("role", "group")
+    this.setAttribute("aria-label", "Filters")
+  }
+
   protected render(): HTMLElement {
     this.classList.add(FilterOptions.className)
     for (const el of this.#itemMap.values()) {

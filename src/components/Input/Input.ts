@@ -1,3 +1,4 @@
+import { Menu } from "@/components/Menu/Menu"
 import { h } from "@/utils/h"
 import { Component } from "@/components/Component"
 import { compose } from "@/mixins/compose"
@@ -42,7 +43,7 @@ export class Input extends InputBase {
     this.#onClear = onClear
     this.#clearButton = h(
       "button",
-      { type: "button", class: Input.clearClassName, "aria-label": "Clear", onclick: this.#handleClear },
+      { type: "button", class: Input.clearClassName, "aria-label": "Clear" },
       "\u00d7",
     ) as HTMLButtonElement
   }
@@ -97,30 +98,35 @@ export class Input extends InputBase {
     this.#clearButton.hidden = !show
   }
 
+  get inputElement(): HTMLInputElement {
+    return this.#inputEl
+  }
+
   protected render(): HTMLElement {
     const placeholder = this.getAttribute("placeholder") ?? ""
     const showClear = this.getAttribute("clearable") !== null
 
     this.#inputEl = h("input", {
       type: "text",
+      role: "combobox",
+      "aria-expanded": "false",
+      "aria-autocomplete": "list",
+      "aria-controls": Menu.listboxId,
+      "aria-activedescendant": "",
       placeholder,
       autocomplate: "off",
       name: this.#name,
-      oninput: this.#handleInput,
-      onblur: this.#handleBlur,
-      onfocus: this.#handleFocus,
     }) as HTMLInputElement
+
+    const opts = { signal: this.abort.signal }
+    this.#inputEl.addEventListener("input", this.#handleInput, opts)
+    this.#inputEl.addEventListener("blur", this.#handleBlur, opts)
+    this.#inputEl.addEventListener("focus", this.#handleFocus, opts)
+    this.#clearButton.addEventListener("click", this.#handleClear, opts)
 
     this.#clearButton.hidden = !showClear
 
     this.append(this.#inputEl, this.#clearButton)
     return this
-  }
-
-  protected onDisconnect(): void {
-    this.#inputEl.removeEventListener("input", this.#handleInput)
-    this.#inputEl.removeEventListener("blur", this.#handleBlur)
-    this.#inputEl.removeEventListener("focus", this.#handleFocus)
-    this.#clearButton.removeEventListener("click", this.#handleClear)
   }
 }

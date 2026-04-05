@@ -12,10 +12,10 @@ customElements.define(SearchResultList.tagName, SearchResultList)
 customElements.define(SearchResultItem.tagName, SearchResultItem)
 customElements.define(FilterOption.tagName, FilterOption)
 customElements.define(FilterOptions.tagName, FilterOptions)
-customElements.define("smart-search", SmartSearch)
+customElements.define(SmartSearch.tagName, SmartSearch)
 
 window.addEventListener("load", () => {
-  const smartSearch = document.querySelector("smart-search") as SmartSearch
+  const smartSearch = document.querySelector(SmartSearch.tagName) as SmartSearch
   smartSearch.loadResults([{ value: "1", label: "Test" }], "test")
 
   console.log(smartSearch)

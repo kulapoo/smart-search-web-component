@@ -1,4 +1,7 @@
 import { Component } from "@/components/Component"
+import { compose } from "@/mixins/compose"
+import { ActiveMixin } from "@/mixins/ActiveMixin"
+import type { Constructor } from "@/mixins/types"
 
 export interface FilterOptionConfig {
   label: string
@@ -8,12 +11,16 @@ export interface FilterOptionConfig {
   onChange: (e: Event) => void
 }
 
-export class FilterOption extends Component {
+const FilterOptionBase = compose(Component, ActiveMixin) as Constructor<Component>
+
+export class FilterOption extends FilterOptionBase {
   static tagName = "ss-filter-option"
   static className = "ss-filter-option"
 
+  declare active: boolean
+
   static get observedAttributes(): string[] {
-    return ["label", "value", "type"]
+    return ["label", "value", "type", "active"]
   }
 
   #onChange: FilterOptionConfig["onChange"]
@@ -35,6 +42,7 @@ export class FilterOption extends Component {
   }
 
   attributeChangedCallback(name: string, _old: string | null, value: string | null): void {
+    super.attributeChangedCallback(name, _old, value)
     if (name === "label") {
       this.textContent = value ?? ""
     } else if (name === "value") {
@@ -49,11 +57,7 @@ export class FilterOption extends Component {
   }
 
   protected onConnect(): void {
-    this.addEventListener("click", this.#handleChange)
-  }
-
-  protected onDisconnect(): void {
-    this.removeEventListener("click", this.#handleChange)
+    this.addEventListener("click", this.#handleChange, { signal: this.abort.signal })
   }
 
   #handleChange = (e: Event): void => {
