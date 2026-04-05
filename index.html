@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>tae</title>
+    <title>Smart Search  Web Component Demo</title>
     <link rel="stylesheet" href="./src/index.css" />
     <script type="module" src="/src/index.ts"></script>
   </head>
@@ -12,8 +12,9 @@
     <smart-search
       name="search"
       debounce="300"
-      datasource="https://dummyjson.com/products/search?q={{query}}"
+      datasource="https://dummyjson.com/products/search?{{q}}"
       placeholder="Search products..."
+      filters='[{"field":"category","value":"smartphones","label":"Smartphones"},{"field":"category","value":"laptops","label":"Laptops"},{"field":"category","value":"fragrances","label":"Fragrances"}]'
     ></smart-search>
   </body>
 </html>

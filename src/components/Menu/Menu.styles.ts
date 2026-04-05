@@ -105,9 +105,9 @@ export const menuStyles = /* css */ `
   }
 `
 
-export const menuCustomStyles = (params: { minHeight: number }) => /* css */ `
+export const menuCustomStyles = (params: { minHeight: number | string }) => /* css */ `
   .ss-result-list {
     padding: 8px;
-    min-height: ${params.minHeight}px;
+    min-height: ${typeof params.minHeight === "number" ? `${params.minHeight}px` : params.minHeight};
   }
 `

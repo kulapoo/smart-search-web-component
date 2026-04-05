@@ -32,7 +32,6 @@ export class SearchResultList extends Component {
   static #groupCounter = 0
 
   #onSelect: SearchResultListOptions["onSelect"]
-  #itemMap = new Map<string, SearchResultItem>()
   #resultItemRenderer: ResultItemRendererFn | null = null
 
   set resultItemRenderer(fn: ResultItemRendererFn | null) {
@@ -47,47 +46,20 @@ export class SearchResultList extends Component {
     this.#onSelect = onSelect
   }
 
-  update(items: SearchResults, query: string): void {
-    const incoming = new Map<string, SearchResult>()
-    if (isGroupedResults(items)) {
-      for (const group of items) {
-        for (const item of group.options) incoming.set(item.value, item)
-      }
-    } else {
-      for (const item of items as SearchResult[]) incoming.set(item.value, item)
-    }
-
-    for (const [value, el] of this.#itemMap) {
-      const result = incoming.get(value)
-      if (result) {
-        el.update(result, query)
-        if (this.#resultItemRenderer) {
-          el.replaceChildren(this.#renderContent(result, query))
-        }
-      } else {
-        this.#itemMap.delete(value)
-      }
-    }
-
-    for (const [value, result] of incoming) {
-      if (!this.#itemMap.has(value)) {
-        this.#itemMap.set(value, this.#createItem(result, query))
-      }
-    }
-
+  update(items: SearchResults, searchTerm: string): void {
     this.replaceChildren()
-    if (isGroupedResults(items)) {
-      for (const group of items) this.#appendGroup(group, query)
+
+    const groups = isGroupedResults(items)
+      ? items
+      : (items as SearchResult[]).some((item) => item.group)
+        ? groupFlatItems(items as SearchResult[])
+        : null
+
+    if (groups) {
+      for (const group of groups) this.#appendGroup(group, searchTerm)
     } else {
-      const flatItems = items as SearchResult[]
-      const hasGroups = flatItems.some((item) => item.group)
-      if (hasGroups) {
-        for (const group of groupFlatItems(flatItems)) this.#appendGroup(group, query)
-      } else {
-        for (const item of flatItems) {
-          const el = this.#itemMap.get(item.value)
-          if (el) this.appendChild(el)
-        }
+      for (const item of items as SearchResult[]) {
+        this.appendChild(this.#createItem(item, searchTerm))
       }
     }
   }
@@ -97,37 +69,34 @@ export class SearchResultList extends Component {
     return this
   }
 
-  #appendGroup(group: SearchResultGroup, _query: string): void {
+  #appendGroup(group: SearchResultGroup, searchTerm: string): void {
     if (group.label) {
       const groupId = `ss-group-${SearchResultList.#groupCounter++}`
       const header = h("div", { class: "ss-result-group-label", id: groupId, role: "presentation" }, group.label)
       const groupEl = h("div", { role: "group", "aria-labelledby": groupId, class: "ss-result-group" })
       for (const item of group.options) {
-        const el = this.#itemMap.get(item.value)
-        if (el) groupEl.appendChild(el)
+        groupEl.appendChild(this.#createItem(item, searchTerm))
       }
-
       this.appendChild(header)
       this.appendChild(groupEl)
     } else {
       for (const item of group.options) {
-        const el = this.#itemMap.get(item.value)
-        if (el) this.appendChild(el)
+        this.appendChild(this.#createItem(item, searchTerm))
       }
     }
   }
 
-  #renderContent(result: SearchResult, query: string): Node {
+  #renderContent(result: SearchResult, searchTerm: string): Node {
     if (this.#resultItemRenderer) {
-      const content = this.#resultItemRenderer(result, query)
+      const content = this.#resultItemRenderer(result, searchTerm)
       return typeof content === "string" ? document.createTextNode(content) : content
     }
-    return highlight(result.label, query)
+    return highlight(result.label, searchTerm)
   }
 
-  #createItem(result: SearchResult, query: string): SearchResultItem {
+  #createItem(result: SearchResult, searchTerm: string): SearchResultItem {
     const item = new SearchResultItem({ result, onSelect: this.#onSelect })
-    item.replaceChildren(this.#renderContent(result, query))
+    item.replaceChildren(this.#renderContent(result, searchTerm))
     return item
   }
 }

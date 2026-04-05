@@ -5,7 +5,7 @@ import { h } from "@/utils/h"
 export interface MenuOptions {
   anchor: HTMLElement
   onClose: () => void
-  maxHeight?: number
+  maxHeight?: number | string
   offset?: number
   placement?: "bottom-start" | "bottom-end" | "top-start" | "top-end"
   matchWidth?: boolean
@@ -55,6 +55,7 @@ export class Menu extends Component {
 
   hide = (): void => {
     if (!this.hasAttribute("open")) return
+    this.removeAttribute("data-keyboard-nav")
     this.#stopPositioning()
     this.#stopClickOutside()
     this.setAttribute("closing", "")
@@ -116,7 +117,7 @@ export class Menu extends Component {
           size({
             apply: ({ availableHeight, rects }) => {
               const styles: Partial<CSSStyleDeclaration> = {
-                maxHeight: `${Math.min(maxHeight, availableHeight)}px`,
+                maxHeight: typeof maxHeight === "number" ? `${Math.min(maxHeight, availableHeight)}px` : maxHeight,
               }
               if (matchWidth) styles.width = `${rects.reference.width}px`
               Object.assign(this.style, styles)

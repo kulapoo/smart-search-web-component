@@ -2,13 +2,18 @@ import { Component } from "@/components/Component"
 import { compose } from "@/mixins/compose"
 import { ActiveMixin } from "@/mixins/ActiveMixin"
 import type { Constructor } from "@/mixins/types"
+import type { FilterItemRendererFn } from "@/types/datasource"
 
-export interface FilterOptionConfig {
+export interface FilterOptionData {
   label: string
   value: string
-  type: "text" | "checkbox" | "radio" | "select" | "multi-select"
+  field: string
   metadata?: Record<string, unknown>
-  onChange: (e: Event) => void
+}
+
+export interface FilterOptionConfig extends FilterOptionData {
+  onChange: (e: CustomEvent) => void
+  renderFn?: FilterItemRendererFn
 }
 
 const FilterOptionBase = compose(Component, ActiveMixin) as Constructor<Component>
@@ -25,14 +30,16 @@ export class FilterOption extends FilterOptionBase {
 
   #onChange: FilterOptionConfig["onChange"]
   #metadata: FilterOptionConfig["metadata"]
+  #renderFn: FilterItemRendererFn | undefined
 
-  constructor({ label, value, type, metadata, onChange }: FilterOptionConfig) {
+  constructor({ label, value, field, metadata, onChange, renderFn }: FilterOptionConfig) {
     super()
     this.#onChange = onChange
     this.#metadata = metadata
+    this.#renderFn = renderFn
     this.setAttribute("label", label)
     this.setAttribute("value", value)
-    this.setAttribute("type", type)
+    this.setAttribute("field", field)
     this.id = `filter-option-${value}`
     this.classList.add(FilterOption.className)
   }
@@ -41,14 +48,33 @@ export class FilterOption extends FilterOptionBase {
     return this.#metadata
   }
 
+  set renderFn(fn: FilterItemRendererFn | undefined) {
+    this.#renderFn = fn
+    this.#applyRender()
+  }
+
   attributeChangedCallback(name: string, _old: string | null, value: string | null): void {
     super.attributeChangedCallback(name, _old, value)
     if (name === "label") {
-      this.textContent = value ?? ""
+      this.#applyRender()
     } else if (name === "value") {
       this.id = `filter-option-${value}`
     }
-    // type: CSS/attr selectors handle styling, no DOM update needed
+  }
+
+  #applyRender(): void {
+    const data: FilterOptionData = {
+      label: this.getAttribute("label") ?? "",
+      value: this.getAttribute("value") ?? "",
+      field: this.getAttribute("field") ?? "",
+      metadata: this.#metadata,
+    }
+    if (this.#renderFn) {
+      const content = this.#renderFn(data)
+      this.replaceChildren(typeof content === "string" ? document.createTextNode(content) : content)
+    } else {
+      this.textContent = data.label
+    }
   }
 
   protected configureAria(): void {
@@ -61,11 +87,11 @@ export class FilterOption extends FilterOptionBase {
   }
 
   #handleChange = (e: Event): void => {
-    this.#onChange(e)
+    this.#onChange(e as CustomEvent<{ field: string; value: string }>)
   }
 
   protected render(): HTMLElement {
-    this.textContent = this.getAttribute("label") ?? ""
+    this.#applyRender()
     return this
   }
 }

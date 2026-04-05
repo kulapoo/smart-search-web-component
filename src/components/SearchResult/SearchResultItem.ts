@@ -2,7 +2,6 @@ import { compose } from "@/mixins/compose"
 import { DisabledMixin } from "@/mixins/DisabledMixin"
 import { ActiveMixin } from "@/mixins/ActiveMixin"
 import { Component } from "@/components/Component"
-import { highlight } from "@/utils/highlight"
 import type { Constructor } from "@/mixins/types"
 
 export interface SearchResult<T extends Record<string, unknown> = Record<string, unknown>> {
@@ -46,10 +45,9 @@ export class SearchResultItem extends SearchResultItemBase {
     return this.#result.value
   }
 
-  update(result: SearchResult, query: string): void {
+  update(result: SearchResult): void {
     this.#result = result
     this.disabled = result.disabled ?? false
-    this.replaceChildren(highlight(result.label, query))
   }
 
   protected configureAria(): void {
