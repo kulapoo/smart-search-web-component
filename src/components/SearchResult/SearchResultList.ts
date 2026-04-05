@@ -1,5 +1,6 @@
 import { Component } from "@/components/Component"
 import { SearchResultItem, type SearchResult } from "@/components/SearchResult/SearchResultItem"
+import type { ResultRenderer } from "@/types/datasource"
 import { highlight } from "@/utils/highlight"
 import { groupFlatItems } from "@/utils/group-items"
 import { h } from "@/utils/h"
@@ -32,6 +33,14 @@ export class SearchResultList extends Component {
 
   #onSelect: SearchResultListOptions["onSelect"]
   #itemMap = new Map<string, SearchResultItem>()
+  #resultRenderer: ResultRenderer | null = null
+
+  set resultRenderer(fn: ResultRenderer | null) {
+    this.#resultRenderer = fn
+  }
+  get resultRenderer(): ResultRenderer | null {
+    return this.#resultRenderer
+  }
 
   constructor({ onSelect }: SearchResultListOptions) {
     super()
@@ -52,6 +61,9 @@ export class SearchResultList extends Component {
       const result = incoming.get(value)
       if (result) {
         el.update(result, query)
+        if (this.#resultRenderer) {
+          el.replaceChildren(this.#renderContent(result, query))
+        }
       } else {
         this.#itemMap.delete(value)
       }
@@ -105,9 +117,17 @@ export class SearchResultList extends Component {
     }
   }
 
+  #renderContent(result: SearchResult, query: string): Node {
+    if (this.#resultRenderer) {
+      const content = this.#resultRenderer(result, query)
+      return typeof content === "string" ? document.createTextNode(content) : content
+    }
+    return highlight(result.label, query)
+  }
+
   #createItem(result: SearchResult, query: string): SearchResultItem {
     const item = new SearchResultItem({ result, onSelect: this.#onSelect })
-    item.replaceChildren(highlight(result.label, query))
+    item.replaceChildren(this.#renderContent(result, query))
     return item
   }
 }

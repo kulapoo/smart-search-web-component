@@ -45,7 +45,7 @@ export function SmartSearchEventHandlerMixin<T extends Constructor<HTMLElement>>
       fireEvent(this, SmartSearchEventNames.INPUT_CHANGE, { value, sourceEvent })
 
       if (attrs.fetchDataOn === "input") {
-        ;(this as unknown as WithLoadData).loadData()
+        ;(this as unknown as WithLoadData).loadData(value)
       }
 
       console.log("handleInput", attrs)
@@ -75,7 +75,7 @@ export function SmartSearchEventHandlerMixin<T extends Constructor<HTMLElement>>
       fireEvent(this, SmartSearchEventNames.INPUT_FOCUS, { value, sourceEvent })
       const attrs = (this as unknown as WithGetAttrs).getAttrs()
       if (attrs.fetchDataOn === "focus") {
-        ;(this as unknown as WithLoadData).loadData()
+        ;(this as unknown as WithLoadData).loadData(value)
       }
 
       if (attrs.openMenuOnFocus) {

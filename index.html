@@ -9,6 +9,12 @@
     <script type="module" src="/src/index.ts"></script>
   </head>
   <body>
-    <smart-search debounce="100" name="search"></smart-search>
+    <smart-search
+      name="search"
+      debounce="300"
+      datasource="https://dummyjson.com/products/search?q={{query}}"
+      fetch-data-on="input"
+      placeholder="Search products..."
+    ></smart-search>
   </body>
 </html>
