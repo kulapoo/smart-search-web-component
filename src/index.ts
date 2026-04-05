@@ -14,18 +14,43 @@ customElements.define(FilterOption.tagName, FilterOption)
 customElements.define(FilterOptions.tagName, FilterOptions)
 customElements.define(SmartSearch.tagName, SmartSearch)
 
+interface DummyJsonProduct {
+  id: number
+  title: string
+  description: string
+  category: string
+  price: number
+}
+
+interface DummyJsonResponse {
+  products: DummyJsonProduct[]
+}
+
 window.addEventListener("load", () => {
   const smartSearch = document.querySelector(SmartSearch.tagName) as SmartSearch
-  smartSearch.loadResults([{ value: "1", label: "Test" }], "test")
+  if (!smartSearch) return
 
-  console.log(smartSearch)
-  if (smartSearch) {
-    smartSearch.addEventListener("ss-menu-open", (e) => {
-      console.log("menu open", e)
-    })
-
-    smartSearch.addEventListener("ss-input-change", (e) => {
-      console.log("input change", (e as CustomEvent<{ value: string; sourceEvent: Event }>).detail)
-    })
+  // Response: { products: [{ id, title, description, category, price }] }
+  smartSearch.transformResponse = (json: unknown) => {
+    const { products } = json as DummyJsonResponse
+    return products.map((p) => ({
+      value: String(p.id),
+      label: p.title,
+      description: `$${p.price} · ${p.category}`,
+      group: p.category,
+      metadata: { price: p.price, description: p.description },
+    }))
   }
+
+  smartSearch.addEventListener("ss-input-change", (e) => {
+    console.log("input change", (e as CustomEvent<{ value: string; sourceEvent: Event }>).detail)
+  })
+
+  smartSearch.addEventListener("ss-menu-select", (e) => {
+    console.log("selected", (e as CustomEvent).detail)
+  })
+
+  smartSearch.addEventListener("ss-load-error", (e) => {
+    console.error("load error", (e as CustomEvent).detail)
+  })
 })

@@ -14,6 +14,7 @@ export const SmartSearchEventNames = {
   MENU_KEYDOWN: "ss-menu-keydown",
   MENU_KEYUP: "ss-menu-keyup",
   MENU_KEYPRESS: "ss-menu-keypress",
+  LOAD_ERROR: "ss-load-error",
 } as const
 
 export const SmartSearchConstraintsAttrs = {

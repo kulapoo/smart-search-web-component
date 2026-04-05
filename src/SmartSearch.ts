@@ -3,6 +3,7 @@ import { Input } from "@/components/Input/Input"
 import { Menu, type MenuOptions } from "@/components/Menu/Menu"
 import { compose } from "@/mixins/compose"
 import { DisabledMixin } from "@/mixins/DisabledMixin"
+import { DataPipelineMixin, type DataPipelineHost } from "@/mixins/DataPipelineMixin"
 import { KeyboardNavMixin, type KeyboardNavHost } from "@/mixins/KeyboardNavMixin"
 import type { Constructor } from "@/mixins/types"
 import { h } from "@/utils/h"
@@ -25,12 +26,13 @@ export { SmartSearchEventNames } from "@/SmartSearchConstants"
 const SmartSearchBase = compose(
   Component,
   DisabledMixin,
+  DataPipelineMixin,
   SmartSearchEventHandlerMixin,
   KeyboardNavMixin,
-) as Constructor<Component & SmartSearchEventHandlers & KeyboardNavHost>
+) as Constructor<Component & DataPipelineHost & SmartSearchEventHandlers & KeyboardNavHost>
 
 export interface WithLoadData {
-  loadData(): Promise<void>
+  loadData(query?: string): Promise<void>
 }
 
 export interface WithGetAttrs {
@@ -128,23 +130,6 @@ export class SmartSearch extends SmartSearchBase implements WithLoadData, WithGe
     }, {} as SmartSearchAttrs)
 
     return attrs
-  }
-
-  async loadData() {
-    const attrs = this.getAttrs()
-    const { datasource } = attrs
-    if (!datasource) {
-      return
-    }
-    await new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([
-          { value: "1", label: "Result 1" },
-          { value: "2", label: "Result 2" },
-          { value: "3", label: "Result 3" },
-        ] as SearchResults)
-      }, 1000)
-    })
   }
 
   setLoading(loading: boolean): void {
@@ -257,11 +242,32 @@ export class SmartSearch extends SmartSearchBase implements WithLoadData, WithGe
     this.addEventListener(SmartSearchEventNames.MENU_CLOSE, this.handleMenuClose as EventListener, opts)
     this.addEventListener(SmartSearchEventNames.MENU_OPEN, this.handleMenuOpen as EventListener, opts)
     this.#inputInstance.inputElement.addEventListener("keydown", this.#handleInputKeydown, opts)
+
+    const attrs = this.getAttrs()
+    if (attrs.options?.length) {
+      this.options = attrs.options
+    }
+  }
+
+  override set resultRenderer(fn: DataPipelineHost["resultRenderer"]) {
+    super.resultRenderer = fn
+    if (this.#searchResultListInstance) {
+      this.#searchResultListInstance.resultRenderer = fn
+    }
+  }
+  override get resultRenderer(): DataPipelineHost["resultRenderer"] {
+    return super.resultRenderer
   }
 
   attributeChangedCallback(name: string, _oldValue: string | null, newValue: string | null): void {
     if (name === "placeholder" && this.#inputInstance) {
       this.#inputInstance.setAttribute("placeholder", newValue ?? "")
+    }
+    if (name === "options") {
+      this.options = newValue ? JSON.parse(newValue) : []
+    }
+    if (name === "datasource") {
+      this.clearCache()
     }
   }
 }
