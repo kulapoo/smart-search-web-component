@@ -1,7 +1,7 @@
 import type { SearchResult } from "@/components/SearchResult/SearchResultItem"
 import { isGroupedResults, type SearchResultGroup, type SearchResults } from "@/components/SearchResult/SearchResultList"
 import type { Constructor } from "@/mixins/types"
-import type { DataAdapter, ResponseTransformer, ResultRenderer } from "@/types/datasource"
+import type { DataAdapter, FilterOptionFn, ResponseTransformer, ResultItemRendererFn } from "@/types/datasource"
 import { ResultCache } from "@/utils/result-cache"
 import { fireEvent } from "@/utils/events"
 import { SmartSearchEventNames } from "@/SmartSearchConstants"
@@ -9,8 +9,10 @@ import { SmartSearchEventNames } from "@/SmartSearchConstants"
 export interface DataPipelineHost {
   dataAdapter: DataAdapter | null
   transformResponse: ResponseTransformer
-  resultRenderer: ResultRenderer | null
+  resultItemRenderer: ResultItemRendererFn | null
+  filterOption: FilterOptionFn | null
   options: SearchResults
+  hasOptions: boolean
   loadData(query?: string): Promise<void>
   clearCache(): void
 }
@@ -19,10 +21,11 @@ export function DataPipelineMixin<T extends Constructor<HTMLElement>>(Base: T) {
   return class DataPipelineElement extends Base implements DataPipelineHost {
     #dataAdapter: DataAdapter | null = null
     #transformResponse: ResponseTransformer = (r) => r as SearchResults
-    #resultRenderer: ResultRenderer | null = null
+    #resultItemRenderer: ResultItemRendererFn | null = null
+    #filterOption: FilterOptionFn | null = null
     #cache = new ResultCache()
     #inflight: AbortController | null = null
-    #staticOptions: SearchResults = []
+    #results: SearchResults = []
 
     set dataAdapter(fn: DataAdapter | null) {
       this.#dataAdapter = fn
@@ -38,26 +41,39 @@ export function DataPipelineMixin<T extends Constructor<HTMLElement>>(Base: T) {
       return this.#transformResponse
     }
 
-    set resultRenderer(fn: ResultRenderer | null) {
-      this.#resultRenderer = fn
+    set resultItemRenderer(fn: ResultItemRendererFn | null) {
+      this.#resultItemRenderer = fn
     }
-    get resultRenderer(): ResultRenderer | null {
-      return this.#resultRenderer
+    get resultItemRenderer(): ResultItemRendererFn | null {
+      return this.#resultItemRenderer
     }
 
-    set options(opts: SearchResults) {
-      this.#staticOptions = opts
+    set filterOption(fn: FilterOptionFn | null) {
+      this.#filterOption = fn
+    }
+    get filterOption(): FilterOptionFn | null {
+      return this.#filterOption
+    }
+
+    set options(results: SearchResults) {
+      this.#results = results
+      this.#cache.clear()
       const self = this as unknown as {
         menuInstance?: { isOpen: boolean }
         getInputEl?(): HTMLInputElement
+        loadData?(query?: string): Promise<void>
       }
       if (self.menuInstance?.isOpen) {
         const query = self.getInputEl?.()?.value ?? ""
-        this.loadData(query)
+        self.loadData?.(query)
       }
     }
     get options(): SearchResults {
-      return this.#staticOptions
+      return this.#results
+    }
+
+    get hasOptions(): boolean {
+      return this.#results.length > 0
     }
 
     clearCache(): void {
@@ -65,7 +81,6 @@ export function DataPipelineMixin<T extends Constructor<HTMLElement>>(Base: T) {
     }
 
     async loadData(query?: string): Promise<void> {
-      // Cancel any in-flight request
       this.#inflight?.abort()
       this.#inflight = new AbortController()
       const signal = this.#inflight.signal
@@ -87,9 +102,8 @@ export function DataPipelineMixin<T extends Constructor<HTMLElement>>(Base: T) {
 
       const hasAdapter = this.#dataAdapter !== null
       const datasource = self.getAttrs?.()?.datasource ?? ""
-      const hasStaticOptions = Array.isArray(this.#staticOptions) && this.#staticOptions.length > 0
 
-      if (!hasAdapter && !datasource && !hasStaticOptions) {
+      if (!hasAdapter && !datasource && !this.hasOptions) {
         return
       }
 
@@ -100,10 +114,12 @@ export function DataPipelineMixin<T extends Constructor<HTMLElement>>(Base: T) {
 
         if (hasAdapter) {
           results = await this.#dataAdapter!(q, signal)
+          this.#results = results
         } else if (datasource) {
           results = await this.#fetchFromDatasource(datasource, q, signal)
+          this.#results = results
         } else {
-          results = this.#filterStatic(q)
+          results = this.#filterOptions(q)
         }
 
         if (signal.aborted) return
@@ -127,24 +143,24 @@ export function DataPipelineMixin<T extends Constructor<HTMLElement>>(Base: T) {
       return this.#transformResponse(json, query)
     }
 
-    #filterStatic(query: string): SearchResults {
+    #filterOptions(query: string): SearchResults {
       const q = query.toLowerCase()
-      if (!q) return this.#staticOptions
+      if (!q) return this.#results
 
-      if (isGroupedResults(this.#staticOptions)) {
-        return (this.#staticOptions as SearchResultGroup[])
-          .map((g) => ({
-            ...g,
-            options: g.options.filter(
-              (o) => o.label.toLowerCase().includes(q) || o.description?.toLowerCase().includes(q),
-            ),
-          }))
+      const defaultMatch = (o: SearchResult) =>
+        o.label.toLowerCase().includes(q) || o.description?.toLowerCase().includes(q)
+
+      const match = this.#filterOption
+        ? (o: SearchResult) => this.#filterOption!(o, query)
+        : defaultMatch
+
+      if (isGroupedResults(this.#results)) {
+        return (this.#results as SearchResultGroup[])
+          .map((g) => ({ ...g, options: g.options.filter(match) }))
           .filter((g) => g.options.length > 0)
       }
 
-      return (this.#staticOptions as SearchResult[]).filter(
-        (o) => o.label.toLowerCase().includes(q) || o.description?.toLowerCase().includes(q),
-      )
+      return (this.#results as SearchResult[]).filter(match)
     }
   }
 }

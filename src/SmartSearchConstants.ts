@@ -41,7 +41,7 @@ export type SmartSearchAttrs = {
   filters?: FilterOptionsOptions[]
   clearable?: boolean
   options?: SearchResult[]
-  fetchDataOn?: "input" | "focus" | ""
+  fetchDataOn?: "input" | "focus" | "" | "input-focus"
   datasource: string
   disabled?: boolean
 
@@ -50,6 +50,7 @@ export type SmartSearchAttrs = {
   closeMenuOnSelect?: boolean
   openMenuOnFocus?: boolean
   openMenuOnInput?: boolean
+  openMenuOnLoadResults?: boolean
   menuMinHeight?: number
 
   // menu positioning / sizing
@@ -77,7 +78,8 @@ export const DefaultSmartSearchAttrs = {
 
   closeMenuOnBlur: true,
   closeMenuOnSelect: true,
-  openMenuOnFocus: false,
+  openMenuOnFocus: true,
+  openMenuOnLoadResults: true,
   openMenuOnInput: true,
   menuMinHeight: 200,
 

@@ -60,7 +60,7 @@ export class SearchResultItem extends SearchResultItemBase {
   protected onConnect(): void {
     this.id = this.id || `ss-result-item-${SearchResultItem.#counter++}`
     this.configureAria()
-    this.addEventListener("click", this.#onClick, { signal: this.abort.signal })
+    this.addEventListener("click", this.#onClick)
   }
 
   #onClick = (event: Event) => {

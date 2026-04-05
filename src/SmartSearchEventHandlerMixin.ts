@@ -4,6 +4,7 @@ import { fireEvent } from "@/utils/events"
 import type { Constructor } from "@/mixins/types"
 import { SmartSearchEventNames } from "@/SmartSearchConstants"
 import type { WithGetAttrs, WithLoadData } from "./SmartSearch"
+import type { DataPipelineHost } from "./mixins/DataPipelineMixin"
 
 export interface WithInputEl {
   getInputEl(): HTMLInputElement
@@ -44,11 +45,10 @@ export function SmartSearchEventHandlerMixin<T extends Constructor<HTMLElement>>
       const attrs = (this as unknown as WithGetAttrs).getAttrs()
       fireEvent(this, SmartSearchEventNames.INPUT_CHANGE, { value, sourceEvent })
 
-      if (attrs.fetchDataOn === "input") {
+      if (attrs.fetchDataOn === "input" || attrs.fetchDataOn === "input-focus") {
         ;(this as unknown as WithLoadData).loadData(value)
       }
 
-      console.log("handleInput", attrs)
       if (attrs.openMenuOnInput) {
         this.menuInstance.show()
       }
@@ -74,11 +74,11 @@ export function SmartSearchEventHandlerMixin<T extends Constructor<HTMLElement>>
       if (this.hasAttribute("disabled")) return
       fireEvent(this, SmartSearchEventNames.INPUT_FOCUS, { value, sourceEvent })
       const attrs = (this as unknown as WithGetAttrs).getAttrs()
-      if (attrs.fetchDataOn === "focus") {
+      if (attrs.fetchDataOn === "focus" || attrs.fetchDataOn === "input-focus") {
         ;(this as unknown as WithLoadData).loadData(value)
       }
 
-      if (attrs.openMenuOnFocus) {
+      if ((this as unknown as DataPipelineHost).hasOptions && attrs.openMenuOnFocus) {
         this.menuInstance.show()
       }
     }
@@ -89,6 +89,10 @@ export function SmartSearchEventHandlerMixin<T extends Constructor<HTMLElement>>
 
     handleSelect = (value: string, result: SearchResult, sourceEvent: Event): void => {
       fireEvent(this, SmartSearchEventNames.MENU_SELECT, { value, result, sourceEvent })
+      const inputEl = (this as unknown as { getInputEl?(): HTMLInputElement }).getInputEl?.()
+      if (inputEl) {
+        inputEl.value = result.label
+      }
       this.handleMenuClose()
     }
   }

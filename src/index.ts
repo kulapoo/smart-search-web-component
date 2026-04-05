@@ -1,8 +1,8 @@
-import { SmartSearch } from "@/SmartSearch"
+import { SmartSearch, SmartSearchEventNames } from "@/SmartSearch"
 import { Input } from "@/components/Input/Input"
 import { Menu } from "@/components/Menu/Menu"
 import { SearchResultList } from "@/components/SearchResult/SearchResultList"
-import { SearchResultItem } from "@/components/SearchResult/SearchResultItem"
+import { SearchResultItem, type SearchResult } from "@/components/SearchResult/SearchResultItem"
 import { FilterOption } from "@/components/Filter/FilterOption"
 import { FilterOptions } from "@/components/Filter/FilterOptions"
 
@@ -52,5 +52,9 @@ window.addEventListener("load", () => {
 
   smartSearch.addEventListener("ss-load-error", (e) => {
     console.error("load error", (e as CustomEvent).detail)
+  })
+
+  smartSearch.addEventListener(SmartSearchEventNames.MENU_SELECT, (e) => {
+    console.log("menu select", (e as CustomEvent<{ value: string; result: SearchResult; sourceEvent: Event }>).detail)
   })
 })
