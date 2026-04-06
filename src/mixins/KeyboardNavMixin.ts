@@ -24,11 +24,11 @@ export function KeyboardNavMixin<T extends Constructor<HTMLElement>>(Base: T) {
       }
     }
 
-    protected getNavigableItems(): HTMLElement[] {
+    getNavigableItems(): HTMLElement[] {
       return []
     }
 
-    protected handleKeyboardNav(e: KeyboardEvent): void {
+    handleKeyboardNav(e: KeyboardEvent): void {
       const items = this.getNavigableItems()
       if (!items.length) return
 
@@ -55,7 +55,7 @@ export function KeyboardNavMixin<T extends Constructor<HTMLElement>>(Base: T) {
       this.onActiveIndexChanged(this.#activeIndex, items)
     }
 
-    protected onActiveIndexChanged(_index: number, _items: HTMLElement[]): void {}
+    onActiveIndexChanged(_index: number, _items: HTMLElement[]): void {}
   }
 
   return KeyboardNavMixinClass as T & Constructor<KeyboardNavMixinClass>

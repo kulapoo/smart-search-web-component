@@ -3,12 +3,13 @@ import { DisabledMixin } from "@/mixins/DisabledMixin"
 import { ActiveMixin } from "@/mixins/ActiveMixin"
 import { Component } from "@/components/Component"
 import type { Constructor } from "@/mixins/types"
+import type { IconNode } from "lucide"
 
 export interface SearchResult<T extends Record<string, unknown> = Record<string, unknown>> {
   value: string
   label: string
   description?: string
-  icon?: string
+  icon?: IconNode
   group?: string
   type?: string
   disabled?: boolean
@@ -33,12 +34,24 @@ export class SearchResultItem extends SearchResultItemBase {
   #result: SearchResult
   #onSelect: SearchResultItemOptions["onSelect"]
 
+  get selected(): boolean {
+    return this.hasAttribute("selected")
+  }
+
+  set selected(value: boolean) {
+    if (value) {
+      this.setAttribute("selected", "")
+    } else {
+      this.removeAttribute("selected")
+    }
+  }
+
   constructor({ result, selected, onSelect }: SearchResultItemOptions) {
     super()
     this.#result = result
     this.#onSelect = onSelect
     if (result.disabled) this.disabled = true
-    if (selected) this.active = true
+    if (selected) this.selected = true
   }
 
   get value(): string {

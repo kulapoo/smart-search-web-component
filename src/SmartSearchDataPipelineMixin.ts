@@ -1,5 +1,9 @@
 import type { SearchResult } from "@/components/SearchResult/SearchResultItem"
-import { isGroupedResults, type SearchResultGroup, type SearchResults } from "@/components/SearchResult/SearchResultList"
+import {
+  isGroupedResults,
+  type SearchResultGroup,
+  type SearchResults,
+} from "@/components/SearchResult/SearchResultList"
 import type { Constructor } from "@/mixins/types"
 import type { DataAdapter, FilterOptionFn, ResponseTransformer, ResultItemRendererFn } from "@/types/datasource"
 import { ResultCache } from "@/utils/result-cache"
@@ -36,10 +40,7 @@ function metadataValueMatchesAny(value: unknown, allowed: string[]): boolean {
   return allowed.includes(String(value))
 }
 
-export function composeQueryString(
-  searchTerm: string,
-  filters: Array<{ field: string; value: string }>,
-): string {
+export function composeQueryString(searchTerm: string, filters: Array<{ field: string; value: string }>): string {
   const parts = [`q=${searchTerm}`]
 
   const grouped = groupFiltersByField(filters)
@@ -50,7 +51,7 @@ export function composeQueryString(
       values.forEach((v, i) => parts.push(`${encodeURIComponent(field)}[${i}]=${encodeURIComponent(v)}`))
     }
   }
-  console.log("parts", parts)
+
   return parts.join("&")
 }
 
@@ -169,11 +170,7 @@ export function SmartSearchDataPipelineMixin<T extends Constructor<HTMLElement>>
       }
     }
 
-    async #fetchFromDatasource(
-      datasource: string,
-      requestQuery: string,
-      signal: AbortSignal,
-    ): Promise<SearchResults> {
+    async #fetchFromDatasource(datasource: string, requestQuery: string, signal: AbortSignal): Promise<SearchResults> {
       const url = datasource.includes("{{q}}")
         ? datasource.replace("{{q}}", requestQuery)
         : `${datasource}${datasource.includes("?") ? "&" : "?"}${requestQuery}`

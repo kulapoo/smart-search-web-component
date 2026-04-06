@@ -8,9 +8,9 @@ import { KeyboardNavMixin, type KeyboardNavHost } from "@/mixins/KeyboardNavMixi
 import type { Constructor } from "@/mixins/types"
 import { h } from "@/utils/h"
 import { fireEvent } from "@/utils/events"
-import { FilterOption } from "@/components/Filter/FilterOption"
 import { FilterOptions } from "@/components/Filter/FilterOptions"
-import { SearchResultItem } from "@/components/SearchResult/SearchResultItem"
+import type { FilterOptionData } from "@/components/Filter/FilterOption"
+import { SearchResultItem, type SearchResult } from "@/components/SearchResult/SearchResultItem"
 import { SearchResultList, type SearchResults, isGroupedResults } from "@/components/SearchResult/SearchResultList"
 import { createStyles } from "@/styles/styles"
 import { SmartSearchEventHandlerMixin, type SmartSearchEventHandlers } from "@/SmartSearchEventHandlerMixin"
@@ -27,6 +27,21 @@ import type { WithLoadData, WithGetAttrs, WithActiveFilters } from "@/types/trai
 
 export { SmartSearchEventNames } from "@/SmartSearchConstants"
 
+function sliceResults(results: SearchResults, max: number): SearchResults {
+  if (isGroupedResults(results)) {
+    let remaining = max
+    const out = []
+    for (const group of results) {
+      if (remaining <= 0) break
+      const options = group.options.slice(0, remaining)
+      out.push({ ...group, options })
+      remaining -= options.length
+    }
+    return out
+  }
+  return (results as SearchResult[]).slice(0, max)
+}
+
 const SmartSearchBase = compose(
   Component,
   DisabledMixin,
@@ -35,10 +50,10 @@ const SmartSearchBase = compose(
   KeyboardNavMixin,
 ) as Constructor<Component & SmartSearchDataPipelineHost & SmartSearchEventHandlers & KeyboardNavHost>
 
-
 export class SmartSearch extends SmartSearchBase implements WithLoadData, WithGetAttrs, WithActiveFilters {
   static tagName = "smart-search"
   static className = "ss-smart-search"
+  static #instanceCount = 0
 
   constructor() {
     super()
@@ -49,12 +64,21 @@ export class SmartSearch extends SmartSearchBase implements WithLoadData, WithGe
     return Object.keys(DefaultSmartSearchAttrs)
   }
 
+  #menuId = `ss-menu-listbox-${++SmartSearch.#instanceCount}`
+
   // elements instances
   #inputInstance!: Input
   menuInstance!: Menu
   #searchResultListInstance!: SearchResultList
   #filterOptionsInstance: FilterOptions | null = null
   #liveRegion!: HTMLElement
+
+  // multi-select state
+  #selectedItems: SearchResult[] = []
+
+  get selectedItems(): SearchResult[] {
+    return [...this.#selectedItems]
+  }
 
   protected configureAria(): void {
     this.setAttribute("aria-label", "Smart Search")
@@ -65,29 +89,42 @@ export class SmartSearch extends SmartSearchBase implements WithLoadData, WithGe
   }
 
   #configureInput() {
-    const { placeholder, debounce, name, clearable } = this.getAttrs()
+    const { placeholder, debounce, name, clearable, maxChars } = this.getAttrs()
 
     const inputOpts = {
       name: name ?? "search",
+      menuId: this.#menuId,
       onInput: this.handleInput,
       onBlur: this.handleInputBlur,
       onFocus: this.handleInputFocus,
       onClear: this.handleClear,
+      onRemoveChip: this.#removeSelectedItem,
     }
     this.#inputInstance = new Input(inputOpts)
 
     if (placeholder) this.#inputInstance.setAttribute("placeholder", placeholder)
     if (debounce !== undefined) this.#inputInstance.setAttribute("debounce", String(debounce))
+    if (maxChars !== undefined) this.#inputInstance.setAttribute("maxlength", String(maxChars))
 
     this.#inputInstance.setAttribute("clearable", clearable ? "true" : "")
   }
 
   #configureMenu() {
-    const { menuMaxHeight, menuOffset, menuPlacement, menuMatchWidth, closeOnEscape, closeOnClickOutside, filters } =
-      this.getAttrs()
+    const {
+      menuMaxHeight,
+      menuOffset,
+      menuPlacement,
+      menuMatchWidth,
+      closeOnEscape,
+      closeOnClickOutside,
+      filters,
+      filterMultiple,
+    } = this.getAttrs()
+
     const menuOpts: MenuOptions = {
       anchor: this.#inputInstance,
       onClose: this.handleMenuClose,
+      id: this.#menuId,
       maxHeight: menuMaxHeight,
       offset: menuOffset,
       placement: menuPlacement as MenuOptions["placement"],
@@ -104,7 +141,8 @@ export class SmartSearch extends SmartSearchBase implements WithLoadData, WithGe
     if (filters?.length) {
       this.#filterOptionsInstance = new FilterOptions({
         options: filters,
-        onChange: this.#handleFilterChange,
+        onChange: this.handleFilterChange,
+        multiple: filterMultiple,
       })
       this.menuInstance.appendChild(this.#filterOptionsInstance)
     }
@@ -143,12 +181,16 @@ export class SmartSearch extends SmartSearchBase implements WithLoadData, WithGe
   }
 
   loadResults(results: SearchResults, searchTerm: string): void {
-    const { openMenuOnLoadResults } = this.getAttrs()
+    const { openMenuOnLoadResults, maxResults } = this.getAttrs()
 
-    this.#searchResultListInstance.update(results, searchTerm)
-    const count = isGroupedResults(results)
-      ? results.reduce((sum, group) => sum + group.options.length, 0)
-      : results.length
+    const sliced = maxResults ? sliceResults(results, maxResults) : results
+    this.#searchResultListInstance.update(sliced, searchTerm)
+    if (this.#selectedItems.length > 0) {
+      this.#searchResultListInstance.setSelectedValues(this.#selectedItems.map((i) => i.value))
+    }
+    const count = isGroupedResults(sliced)
+      ? sliced.reduce((sum, group) => sum + group.options.length, 0)
+      : sliced.length
     this.menuInstance.empty = count === 0
     this.menuInstance.loading = false
     if (openMenuOnLoadResults && count > 0) {
@@ -183,6 +225,15 @@ export class SmartSearch extends SmartSearchBase implements WithLoadData, WithGe
     return super.resultItemRenderer
   }
 
+  set highlightMatches(v: boolean) {
+    if (this.#searchResultListInstance) {
+      this.#searchResultListInstance.highlightMatches = v
+    }
+  }
+  get highlightMatches(): boolean {
+    return this.#searchResultListInstance?.highlightMatches ?? true
+  }
+
   set filterItemRenderer(fn: FilterItemRendererFn | null) {
     if (this.#filterOptionsInstance) {
       this.#filterOptionsInstance.renderFn = fn ?? undefined
@@ -193,18 +244,65 @@ export class SmartSearch extends SmartSearchBase implements WithLoadData, WithGe
     return this.#filterOptionsInstance?.getActiveFilters() ?? []
   }
 
-  #handleFilterChange = (_e: CustomEvent): void => {
-    const activeFilters = this.getActiveFilters()
-    fireEvent(this, SmartSearchEventNames.FILTER_CHANGE, { filters: activeFilters })
-    const searchTerm = this.getInputEl().value
-    this.loadData(searchTerm, activeFilters)
+  /* multi-select */
+  #addSelectedItem = (result: SearchResult, sourceEvent: Event): void => {
+    this.#selectedItems.push(result)
+    this.#syncMultiSelectState(sourceEvent)
+  }
+
+  #removeSelectedItem = (value: string, sourceEvent?: Event): void => {
+    this.#selectedItems = this.#selectedItems.filter((i) => i.value !== value)
+    this.#syncMultiSelectState(sourceEvent)
+  }
+
+  #clearAllSelectedItems = (): void => {
+    this.#selectedItems = []
+    this.#syncMultiSelectState()
+  }
+
+  #syncMultiSelectState(sourceEvent?: Event): void {
+    this.#inputInstance.updateChips(this.#selectedItems)
+    this.#searchResultListInstance.setSelectedValues(this.#selectedItems.map((i) => i.value))
+    this.#inputInstance.setMultiValue(
+      this.#selectedItems.length > 0 ? JSON.stringify(this.#selectedItems.map((i) => i.value)) : null,
+    )
+    const evt = sourceEvent ?? new Event("ss-multiselect-sync", { bubbles: false, composed: false })
+    fireEvent(this, SmartSearchEventNames.MULTISELECT_CHANGE, {
+      items: [...this.#selectedItems],
+      sourceEvent: evt,
+    })
+  }
+
+  override handleSelect = (value: string, result: SearchResult, sourceEvent: Event): void => {
+    const { multiselect } = this.getAttrs()
+    if (multiselect) {
+      const alreadySelected = this.#selectedItems.some((i) => i.value === value)
+      if (alreadySelected) {
+        this.#removeSelectedItem(value, sourceEvent)
+      } else {
+        this.#addSelectedItem(result, sourceEvent)
+      }
+      return
+    }
+    fireEvent(this, SmartSearchEventNames.MENU_SELECT, { value, result, sourceEvent })
+    const inputEl = this.getInputEl()
+    inputEl.value = result.label
+    this.handleMenuClose()
+  }
+
+  override handleClear = (): void => {
+    const { multiselect } = this.getAttrs()
+    if (multiselect) {
+      this.#clearAllSelectedItems()
+    }
+    this.handleMenuClose()
   }
 
   /* keyboard navigation */
   protected getNavigableItems(): HTMLElement[] {
     return Array.from(
       this.menuInstance.querySelectorAll<HTMLElement>(
-        `${SearchResultList.tagName} ${SearchResultItem.tagName}:not([disabled]), ${FilterOption.tagName}:not([disabled])`,
+        `${SearchResultList.tagName} ${SearchResultItem.tagName}:not([disabled])`,
       ),
     )
   }
@@ -221,38 +319,6 @@ export class SmartSearch extends SmartSearchBase implements WithLoadData, WithGe
       activeItem.scrollIntoView({ block: "nearest" })
     } else {
       inputEl.setAttribute("aria-activedescendant", "")
-    }
-  }
-
-  #onMenuPointerMove = (): void => {
-    this.menuInstance.removeAttribute("data-keyboard-nav")
-  }
-
-  #handleInputKeydown = (e: KeyboardEvent): void => {
-    if (!this.menuInstance.isOpen) return
-
-    switch (e.key) {
-      case "ArrowDown":
-      case "ArrowUp":
-      case "Home":
-      case "End":
-        this.handleKeyboardNav(e)
-        this.menuInstance.setAttribute("data-keyboard-nav", "")
-        break
-      case "Enter": {
-        e.preventDefault()
-        const items = this.getNavigableItems()
-        const active = items[this.activeIndex]
-        active?.click()
-        break
-      }
-      case "Tab":
-        this.handleMenuClose()
-        break
-      case "Escape":
-        e.preventDefault()
-        this.handleMenuClose()
-        break
     }
   }
 
@@ -273,22 +339,37 @@ export class SmartSearch extends SmartSearchBase implements WithLoadData, WithGe
 
   protected onConnect(): void {
     let menuMinHeight = this.getAttribute("menu-min-height") ?? DefaultSmartSearchAttrs.menuMinHeight
-    this.shadowRoot!.adoptedStyleSheets = createStyles([menuCustomStyles({ minHeight: menuMinHeight as number | string })])
+    this.shadowRoot!.adoptedStyleSheets = createStyles([
+      menuCustomStyles({ minHeight: menuMinHeight as number | string }),
+    ])
     const opts = { signal: this.abort.signal }
     this.addEventListener(SmartSearchEventNames.MENU_CLOSE, this.handleMenuClose as EventListener, opts)
     this.addEventListener(SmartSearchEventNames.MENU_OPEN, this.handleMenuOpen as EventListener, opts)
-    this.#inputInstance.inputElement.addEventListener("keydown", this.#handleInputKeydown, opts)
-    this.menuInstance.addEventListener("pointermove", this.#onMenuPointerMove, opts)
+    this.#inputInstance.inputElement.addEventListener("keydown", this.handleInputKeydown, opts)
+    this.menuInstance.addEventListener("pointermove", this.handlePointerMoveOnMenu, opts)
 
     const attrs = this.getAttrs()
     if (attrs.options?.length) {
       this.options = attrs.options
     }
+    this.#searchResultListInstance.highlightMatches = this.getAttribute("highlight-matches") !== "false"
   }
 
   attributeChangedCallback(name: string, _oldValue: string | null, newValue: string | null): void {
+    super.attributeChangedCallback(name, _oldValue, newValue)
+    if (name === "theme") {
+      fireEvent(this, SmartSearchEventNames.THEME_CHANGE, { theme: newValue ?? "auto" })
+      return
+    }
     if (name === "placeholder" && this.#inputInstance) {
       this.#inputInstance.setAttribute("placeholder", newValue ?? "")
+    }
+    if (name === "max-chars" && this.#inputInstance) {
+      if (newValue !== null) {
+        this.#inputInstance.setAttribute("maxlength", newValue)
+      } else {
+        this.#inputInstance.removeAttribute("maxlength")
+      }
     }
     if (name === "options") {
       this.options = newValue ? JSON.parse(newValue) : []
@@ -296,8 +377,26 @@ export class SmartSearch extends SmartSearchBase implements WithLoadData, WithGe
     if (name === "datasource") {
       this.clearCache()
     }
-    if (name === "filters" && this.#filterOptionsInstance) {
-      this.#filterOptionsInstance.update(newValue ? JSON.parse(newValue) : [])
+    if (name === "filters" && this.menuInstance) {
+      const parsed: FilterOptionData[] = newValue ? JSON.parse(newValue) : []
+      if (this.#filterOptionsInstance) {
+        this.#filterOptionsInstance.update(parsed)
+      } else if (parsed.length) {
+        const { filterMultiple } = this.getAttrs()
+        this.#filterOptionsInstance = new FilterOptions({
+          options: parsed,
+          onChange: this.handleFilterChange,
+          multiple: filterMultiple,
+        })
+        this.menuInstance.insertBefore(this.#filterOptionsInstance, this.#searchResultListInstance)
+      }
+    }
+    if (name === "filter-multiple" && this.#filterOptionsInstance) {
+      const { filterMultiple } = this.getAttrs()
+      this.#filterOptionsInstance.multiple = filterMultiple ?? true
+    }
+    if (name === "highlight-matches" && this.#searchResultListInstance) {
+      this.#searchResultListInstance.highlightMatches = newValue !== "false"
     }
   }
 }

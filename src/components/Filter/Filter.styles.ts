@@ -21,6 +21,7 @@ export const filterOptionStyles = `
     font-size: 0.8125rem;
     cursor: pointer;
     user-select: none;
+    touch-action: manipulation;
     transition: background 0.1s, color 0.1s, border-color 0.1s;
   }
 

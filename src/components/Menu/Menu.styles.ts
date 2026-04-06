@@ -94,6 +94,8 @@ export const menuStyles = /* css */ `
     overflow-y: auto;
     flex: 1;
     min-height: 0;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
   }
 
   .ss-menu-empty,

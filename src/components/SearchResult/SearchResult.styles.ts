@@ -1,4 +1,4 @@
-export const searchResultListStyles =  `
+export const searchResultListStyles = `
   ss-search-result-list {
     display: block;
     padding: var(--ss-result-list-padding, 4px);
@@ -38,6 +38,7 @@ export const searchResultItemStyles = `
     line-height: 1.4;
     cursor: pointer;
     user-select: none;
+    touch-action: manipulation;
     transition:
       background-color var(--ss-transition),
       color var(--ss-transition);
@@ -64,6 +65,23 @@ export const searchResultItemStyles = `
     opacity: var(--ss-result-disabled-opacity, 0.45);
     cursor: not-allowed;
     pointer-events: none;
+  }
+
+  ss-search-result-item[selected] {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  ss-search-result-item[selected] svg[data-ss-check] {
+    margin-left: auto;
+    flex-shrink: 0;
+    color: var(--ss-chip-active-bg, #3b82f6);
+  }
+
+  ss-search-result-item svg {
+    flex-shrink: 0;
+    vertical-align: middle;
   }
 
 

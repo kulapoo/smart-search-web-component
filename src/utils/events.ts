@@ -8,11 +8,14 @@ export interface FireOptions {
 
 /** Detail payload of the `ss-select` custom event. */
 export interface SearchSelectDetail<T extends Record<string, unknown> = Record<string, unknown>> {
-  /** The selected result's value. */
   value: string
-  /** The full selected result object, including metadata. */
   result: SearchResult<T>
-  /** The original DOM event that triggered the selection. */
+  sourceEvent: Event
+}
+
+/** Detail payload of the `ss-multiselect-change` custom event. */
+export interface MultiSelectDetail<T extends Record<string, unknown> = Record<string, unknown>> {
+  items: SearchResult<T>[]
   sourceEvent: Event
 }
 
