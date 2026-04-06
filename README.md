@@ -164,6 +164,28 @@ See [Theming docs](docs/theming.md) for the full list of 25+ tokens.
 | `ss-load-error`         | `{ error, requestQuery }`        | Data fetch fails           |
 | `ss-theme-change`       | `{ theme }`                      | Theme attribute changes    |
 
+## Running Locally
+
+```bash
+# Install dependencies
+npm install
+
+# Start the dev server (serves index.html demo at http://localhost:5173)
+npm run dev
+
+# Run tests in watch mode
+npm run test
+
+# Run all tests once
+npm run test -- --run
+
+# Type-check
+npm run typecheck
+
+# Build the library
+npm run build
+```
+
 ## Bundle Size
 
 | Format    | Raw     | Gzipped |
