@@ -3,7 +3,7 @@ import { resolve } from "path"
 
 export default defineConfig({
   root: ".",
-  base: "/smart-search-web-component/",
+  base: "/",
   resolve: {
     alias: {
       "@": resolve(__dirname, "./src"),
