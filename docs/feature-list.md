@@ -30,7 +30,7 @@
 
 # Data
 
-- Flexible data structure supporting multiple banking entity types (accounts, transactions, customers)
+- Flexible data structure supporting multiple entity types
 - Consistent display regardless of data shape
 
 # Tests
@@ -46,10 +46,3 @@
 - GitHub repo with source + build setup
 - Demo application (index.html)
 - README.md with install, usage, API docs, test instructions
-
-# Nice to haves
-
-- plugins
-  - fuzzy search
-  - i18n
-  - virtualize

@@ -6,6 +6,7 @@ export interface FilterOptionsOptions {
   options: FilterOptionData[]
   onChange: (e: CustomEvent) => void
   renderFn?: FilterItemRendererFn
+  multiple?: boolean
 }
 
 export class FilterOptions extends Component {
@@ -14,24 +15,55 @@ export class FilterOptions extends Component {
   #renderFn: FilterItemRendererFn | undefined
   #selected: string[] = []
   #options: FilterOptionData[] = []
+  #multiple: boolean
 
-  #onChange: FilterOptionsOptions["onChange"] 
-  constructor({ options, onChange, renderFn }: FilterOptionsOptions) {
+  #onChange: FilterOptionsOptions["onChange"]
+  constructor({ options, onChange, renderFn, multiple }: FilterOptionsOptions) {
     super()
     this.#renderFn = renderFn
     this.#onChange = onChange
+    this.#multiple = multiple ?? true
     this.update(options)
+  }
+
+  get multiple(): boolean {
+    return this.#multiple
+  }
+
+  set multiple(value: boolean) {
+    this.#multiple = value
+    this.setAttribute("aria-multiselectable", String(value))
+    if (!value && this.#selected.length > 1) {
+      const kept = this.#selected[this.#selected.length - 1]
+      this.#selected = [kept]
+      for (const child of this.querySelectorAll<FilterOption>(FilterOption.tagName)) {
+        child.active = child.getAttribute("value") === kept
+      }
+    }
   }
 
   #handleChange = (e: CustomEvent) => {
     const el = e.currentTarget as FilterOption
     const value = el.getAttribute("value") ?? ""
-    if (this.#selected.includes(value)) {
-      this.#selected = this.#selected.filter((v) => v !== value)
-      el.active = false
+    if (this.#multiple) {
+      if (this.#selected.includes(value)) {
+        this.#selected = this.#selected.filter((v) => v !== value)
+        el.active = false
+      } else {
+        this.#selected.push(value)
+        el.active = true
+      }
     } else {
-      this.#selected.push(value)
-      el.active = true
+      const wasActive = this.#selected.includes(value)
+      for (const child of this.querySelectorAll<FilterOption>(FilterOption.tagName)) {
+        child.active = false
+      }
+      if (wasActive) {
+        this.#selected = []
+      } else {
+        this.#selected = [value]
+        el.active = true
+      }
     }
     this.#onChange(new CustomEvent("change", { detail: { selected: this.#selected } }))
   }
@@ -61,6 +93,7 @@ export class FilterOptions extends Component {
   protected configureAria(): void {
     this.setAttribute("role", "group")
     this.setAttribute("aria-label", "Filters")
+    this.setAttribute("aria-multiselectable", String(this.#multiple))
   }
 
   protected render(): HTMLElement {

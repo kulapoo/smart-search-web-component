@@ -2,19 +2,825 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Smart Search  Web Component Demo</title>
-    <link rel="stylesheet" href="./src/index.css" />
-    <script type="module" src="/src/index.ts"></script>
+    <title>smart-search-web-component — Demo</title>
+    <link rel="stylesheet" href="./demo/styles.css" />
+    <script type="module" src="./demo/main.ts"></script>
   </head>
   <body>
-    <smart-search
-      name="search"
-      debounce="300"
-      datasource="https://dummyjson.com/products/search?{{q}}"
-      placeholder="Search products..."
-      filters='[{"field":"category","value":"smartphones","label":"Smartphones"},{"field":"category","value":"laptops","label":"Laptops"},{"field":"category","value":"fragrances","label":"Fragrances"}]'
-    ></smart-search>
+    <div class="layout">
+      <!-- Header -->
+      <header class="header">
+        <a class="header-logo" href="#">
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
+            <path d="M11 8v6M8 11h6" />
+          </svg>
+          <span class="header-title">smart-search</span>
+        </a>
+        <span class="header-badge">Web Component</span>
+        <div class="header-spacer"></div>
+        <a class="header-link" href="docs/getting-started.md">Docs</a>
+        <a class="header-link" href="docs/api-reference.md">API</a>
+        <a
+          class="header-link"
+          href="https://github.com/kulapoo/smart-search-web-component"
+          target="_blank"
+          rel="noopener"
+          >GitHub</a
+        >
+      </header>
+      <!-- Mobile nav strip (visible < 900px) -->
+      <nav class="mobile-nav" aria-label="Jump to section">
+        <a class="mobile-nav-link active" href="#basic">Basic</a>
+        <a class="mobile-nav-link" href="#filters">Filters</a>
+        <a class="mobile-nav-link" href="#dark">Dark Mode</a>
+        <a class="mobile-nav-link" href="#brands">Brands</a>
+        <a class="mobile-nav-link" href="#custom-renderer">Custom Renderer</a>
+        <a class="mobile-nav-link" href="#multiselect">Multi-select</a>
+        <a class="mobile-nav-link" href="#static">Static Options</a>
+        <a class="mobile-nav-link" href="#events">Events</a>
+      </nav>
+
+      <!-- Sidebar -->
+      <nav class="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-label">Examples</div>
+          <a class="sidebar-link active" href="#basic"><span class="sidebar-dot"></span> Basic</a>
+          <a class="sidebar-link" href="#filters"><span class="sidebar-dot"></span> With Filters</a>
+          <a class="sidebar-link" href="#dark"><span class="sidebar-dot"></span> Dark Theme</a>
+          <a class="sidebar-link" href="#brands"><span class="sidebar-dot"></span> Brand Themes</a>
+          <a class="sidebar-link" href="#custom-renderer"><span class="sidebar-dot"></span> Custom Renderer</a>
+          <a class="sidebar-link" href="#multiselect"><span class="sidebar-dot"></span> Multi-select</a>
+          <a class="sidebar-link" href="#static"><span class="sidebar-dot"></span> Static Options</a>
+          <a class="sidebar-link" href="#events"><span class="sidebar-dot"></span> Events Log</a>
+        </div>
+        <div class="sidebar-section" style="margin-top: 20px">
+          <div class="sidebar-label">Docs</div>
+          <a class="sidebar-link" href="docs/getting-started.md">Getting Started</a>
+          <a class="sidebar-link" href="docs/api-reference.md">API Reference</a>
+          <a class="sidebar-link" href="docs/theming.md">Theming</a>
+          <a class="sidebar-link" href="docs/advanced-usage.md">Advanced Usage</a>
+        </div>
+      </nav>
+      <main class="main">
+        <section class="hero">
+          <div class="hero-eyebrow">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polygon
+                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+              />
+            </svg>
+            ~11 kB gzipped &middot; Framework-agnostic &middot; Web Components
+          </div>
+          <h1>Smart Search<br /><span>for the open web</span></h1>
+          <p class="hero-sub">
+            A lightweight, production-ready search input built with Custom Elements and Shadow DOM. Drop it into React,
+            Vue, Svelte, Angular, or plain HTML &mdash; no framework required.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="docs/getting-started.md">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+              Get Started
+            </a>
+            <a class="btn btn-outline" href="docs/api-reference.md">API Reference</a>
+          </div>
+          <div class="feature-grid">
+            <div class="feature-pill">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+                <line x1="4" y1="22" x2="4" y2="15" />
+              </svg>
+              Filter chips
+            </div>
+            <div class="feature-pill">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="2" y="3" width="20" height="14" rx="2" />
+                <path d="M8 21h8M12 17v4" />
+              </svg>
+              Keyboard nav
+            </div>
+            <div class="feature-pill">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+              Dark mode
+            </div>
+            <div class="feature-pill">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+              Custom renderers
+            </div>
+            <div class="feature-pill">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="9 11 12 14 22 4" />
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+              </svg>
+              Multi-select
+            </div>
+            <div class="feature-pill">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                <polyline points="13 2 13 9 20 9" />
+              </svg>
+              Form integration
+            </div>
+            <div class="feature-pill">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z" />
+                <line x1="16" y1="8" x2="2" y2="22" />
+                <line x1="17.5" y1="15" x2="9" y2="15" />
+              </svg>
+              ~11 kB gzipped
+            </div>
+          </div>
+        </section>
+        <!-- 1. Basic -->
+        <section class="section" id="basic">
+          <div class="section-header">
+            <div class="section-icon">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+            </div>
+            <h2 class="section-title">Basic</h2>
+          </div>
+          <p class="section-desc">
+            Set a <code>datasource</code> URL with a <code>&#123;&#123;q&#125;&#125;</code> placeholder and provide a
+            <code>transformResponse</code> function to map the API response. Type to search DummyJSON products.
+          </p>
+          <div class="demo-card">
+            <div class="demo-split">
+              <div class="demo-pane">
+                <span class="demo-pane-label">Live</span>
+                <div class="demo-component">
+                  <smart-search
+                    id="demo-basic"
+                    highlight-matches="false"
+                    placeholder="Search products..."
+                    datasource="https://dummyjson.com/products/search?{{q}}"
+                    debounce="300"
+                  ></smart-search>
+                </div>
+              </div>
+              <div class="code-pane">
+                <div class="code-header">
+                  <div class="code-dots">
+                    <span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span>
+                  </div>
+                  <span class="code-filename">index.html</span>
+                </div>
+                <pre><span class="t-tag">&lt;smart-search</span>
+  <span class="t-attr">placeholder</span>=<span class="t-val">"Search products..."</span>
+  <span class="t-attr">datasource</span>=<span class="t-val">"https://api.example.com/search?{{q}}"</span>
+  <span class="t-attr">debounce</span>=<span class="t-val">"300"</span>
+<span class="t-tag">&gt;&lt;/smart-search&gt;</span>
+
+<span class="t-tag">&lt;script </span><span class="t-attr">type</span>=<span class="t-val">"module"</span><span class="t-tag">&gt;</span>
+  <span class="t-kw">const</span> el = document.<span class="t-fn">querySelector</span>(<span class="t-str">'smart-search'</span>)
+
+  el.<span class="t-attr">transformResponse</span> = (json) =&gt;
+    json.products.<span class="t-fn">map</span>((p) =&gt; ({
+      value: <span class="t-fn">String</span>(p.id),
+      label: p.title,
+      description: p.category,
+      group: p.category,
+    }))
+
+  el.<span class="t-fn">addEventListener</span>(<span class="t-str">'ss-menu-select'</span>, (e) =&gt; {
+    console.<span class="t-fn">log</span>(<span class="t-str">'selected:'</span>, e.detail.result)
+  })
+<span class="t-tag">&lt;/script&gt;</span></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+        <!-- 2. Filters -->
+        <section class="section" id="filters">
+          <div class="section-header">
+            <div class="section-icon">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+              </svg>
+            </div>
+            <h2 class="section-title">With Filters</h2>
+          </div>
+          <p class="section-desc">
+            Pass a <code>filters</code> JSON array to show toggleable filter chips above the results. Active filters
+            append <code>field=value</code> to the query string sent to your API.
+          </p>
+          <div class="demo-card">
+            <div class="demo-split">
+              <div class="demo-pane">
+                <span class="demo-pane-label">Live</span>
+                <div class="demo-component">
+                  <smart-search
+                    id="demo-filters"
+                    placeholder="Search products..."
+                    datasource="https://dummyjson.com/products/search?{{q}}"
+                    debounce="300"
+                  ></smart-search>
+                </div>
+              </div>
+              <div class="code-pane">
+                <div class="code-header">
+                  <div class="code-dots">
+                    <span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span>
+                  </div>
+                  <span class="code-filename">index.html</span>
+                </div>
+                <pre><span class="t-tag">&lt;smart-search</span>
+  <span class="t-attr">datasource</span>=<span class="t-val">"https://api.example.com/search?{{q}}"</span>
+  <span class="t-attr">filters</span>=<span class="t-val">'[
+    {"field":"category","value":"smartphones",
+     "label":"Smartphones"},
+    {"field":"category","value":"laptops",
+     "label":"Laptops"}
+  ]'</span>
+<span class="t-tag">&gt;&lt;/smart-search&gt;</span>
+
+<span class="t-cm">// Active filters compose the query:</span>
+<span class="t-cm">// ?q=phone&amp;category=smartphones</span>
+
+el.<span class="t-fn">addEventListener</span>(<span class="t-str">'ss-filter-change'</span>, (e) =&gt; {
+  console.<span class="t-fn">log</span>(e.detail.filters)
+  <span class="t-cm">// [{ field: 'category', value: 'smartphones' }]</span>
+})</pre>
+              </div>
+            </div>
+          </div>
+        </section>
+        <!-- 3. Dark Theme -->
+        <section class="section" id="dark">
+          <div class="section-header">
+            <div class="section-icon">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            </div>
+            <h2 class="section-title">Dark Theme</h2>
+          </div>
+          <p class="section-desc">
+            Add <code>theme="dark"</code> for the built-in dark palette. <code>theme="auto"</code> (default) follows
+            <code>prefers-color-scheme</code>. All colors are overridable via CSS custom properties.
+          </p>
+          <div class="demo-card">
+            <div class="demo-split">
+              <div class="demo-pane demo-pane-dark">
+                <span class="demo-pane-label demo-pane-label-dark">Live</span>
+                <div class="demo-component">
+                  <smart-search
+                    id="demo-dark"
+                    placeholder="Search products..."
+                    datasource="https://dummyjson.com/products/search?{{q}}"
+                    debounce="300"
+                    theme="dark"
+                  ></smart-search>
+                </div>
+              </div>
+              <div class="code-pane">
+                <div class="code-header">
+                  <div class="code-dots">
+                    <span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span>
+                  </div>
+                  <span class="code-filename">index.html</span>
+                </div>
+                <pre><span class="t-cm">&lt;!-- Built-in dark palette --&gt;</span>
+<span class="t-tag">&lt;smart-search</span>
+  <span class="t-attr">theme</span>=<span class="t-val">"dark"</span>
+  <span class="t-attr">datasource</span>=<span class="t-val">"..."</span>
+<span class="t-tag">&gt;&lt;/smart-search&gt;</span>
+
+<span class="t-cm">&lt;!-- Follow system preference --&gt;</span>
+<span class="t-tag">&lt;smart-search</span> <span class="t-attr">theme</span>=<span class="t-val">"auto"</span><span class="t-tag">&gt;&lt;/smart-search&gt;</span>
+
+<span class="t-cm">/* Override via CSS custom properties */</span>
+<span class="t-fn">smart-search</span> {
+  <span class="t-attr">--ss-accent</span>: <span class="t-val">#7c3aed</span>;
+  <span class="t-attr">--ss-radius</span>: <span class="t-val">6px</span>;
+  <span class="t-attr">--ss-input-height</span>: <span class="t-val">44px</span>;
+}</pre>
+              </div>
+            </div>
+          </div>
+        </section>
+        <!-- 4. Brand Themes -->
+        <section class="section" id="brands">
+          <div class="section-header">
+            <div class="section-icon">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="13.5" cy="6.5" r="2.5" />
+                <circle cx="17.5" cy="10.5" r="2.5" />
+                <circle cx="8.5" cy="7.5" r="2.5" />
+                <circle cx="6.5" cy="12.5" r="2.5" />
+                <path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2" />
+                <path d="M22 12c0 5.5-4.5 10-10 10" />
+              </svg>
+            </div>
+            <h2 class="section-title">Brand Themes</h2>
+          </div>
+          <p class="section-desc">
+            Override any CSS token per instance to match your brand. Set custom properties directly on the element
+            &mdash; they cascade into the Shadow DOM automatically.
+          </p>
+          <div class="demo-card">
+            <div class="demo-split">
+              <div class="demo-pane">
+                <span class="demo-pane-label">Live &mdash; three brand palettes, one component</span>
+                <div class="demo-component">
+                  <div class="brand-rows">
+                    <div class="brand-row">
+                      <span class="brand-row-label">Violet &mdash; SaaS / Fintech</span>
+                      <smart-search
+                        id="demo-brand-violet"
+                        placeholder="Search technologies..."
+                        style="
+                          --ss-accent: #7c3aed;
+                          --ss-accent-ring: rgba(124, 58, 237, 0.2);
+                          --ss-active: #ede9fe;
+                          --ss-chip-active-bg: #7c3aed;
+                          --ss-mark-bg: #ddd6fe;
+                        "
+                      ></smart-search>
+                    </div>
+                    <div class="brand-row">
+                      <span class="brand-row-label">Emerald &mdash; Health / Eco</span>
+                      <smart-search
+                        id="demo-brand-emerald"
+                        placeholder="Search technologies..."
+                        style="
+                          --ss-accent: #059669;
+                          --ss-accent-ring: rgba(5, 150, 105, 0.2);
+                          --ss-active: #d1fae5;
+                          --ss-chip-active-bg: #059669;
+                          --ss-mark-bg: #a7f3d0;
+                        "
+                      ></smart-search>
+                    </div>
+                    <div class="brand-row">
+                      <span class="brand-row-label">Rose &mdash; Fashion / E-commerce</span>
+                      <smart-search
+                        id="demo-brand-rose"
+                        placeholder="Search technologies..."
+                        style="
+                          --ss-accent: #e11d48;
+                          --ss-accent-ring: rgba(225, 29, 72, 0.2);
+                          --ss-active: #ffe4e6;
+                          --ss-chip-active-bg: #e11d48;
+                          --ss-mark-bg: #fecdd3;
+                        "
+                      ></smart-search>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="code-pane">
+                <div class="code-header">
+                  <div class="code-dots">
+                    <span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span>
+                  </div>
+                  <span class="code-filename">styles.css</span>
+                </div>
+                <pre><span class="t-cm">/* Violet — SaaS / Fintech */</span>
+<span class="t-fn">#violet-search</span> {
+  <span class="t-attr">--ss-accent</span>: <span class="t-val">#7c3aed</span>;
+  <span class="t-attr">--ss-accent-ring</span>: <span class="t-val">rgba(124, 58, 237, 0.2)</span>;
+  <span class="t-attr">--ss-active</span>: <span class="t-val">#ede9fe</span>;
+}
+
+<span class="t-cm">/* Emerald — Health / Eco */</span>
+<span class="t-fn">#emerald-search</span> {
+  <span class="t-attr">--ss-accent</span>: <span class="t-val">#059669</span>;
+  <span class="t-attr">--ss-accent-ring</span>: <span class="t-val">rgba(5, 150, 105, 0.2)</span>;
+  <span class="t-attr">--ss-active</span>: <span class="t-val">#d1fae5</span>;
+}
+
+<span class="t-cm">/* Rose — Fashion / E-commerce */</span>
+<span class="t-fn">#rose-search</span> {
+  <span class="t-attr">--ss-accent</span>: <span class="t-val">#e11d48</span>;
+  <span class="t-attr">--ss-accent-ring</span>: <span class="t-val">rgba(225, 29, 72, 0.2)</span>;
+  <span class="t-attr">--ss-active</span>: <span class="t-val">#ffe4e6</span>;
+}
+
+<span class="t-cm">/* Or set inline on the element: */</span>
+<span class="t-tag">&lt;smart-search</span>
+  <span class="t-attr">style</span>=<span class="t-val">"--ss-accent:#7c3aed;
+         --ss-active:#ede9fe"</span>
+<span class="t-tag">&gt;&lt;/smart-search&gt;</span></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+        <!-- 5. Custom Renderer (was 4) -->
+        <section class="section" id="custom-renderer">
+          <div class="section-header">
+            <div class="section-icon">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+            </div>
+            <h2 class="section-title">Custom Renderer</h2>
+          </div>
+          <p class="section-desc">
+            Use <code>resultItemRenderer</code> to return any DOM node as the result content. CSS tokens like
+            <code>--ss-accent</code> are available inside rendered nodes.
+          </p>
+          <div class="demo-card">
+            <div class="demo-split">
+              <div class="demo-pane">
+                <span class="demo-pane-label">Live &mdash; product cards with thumbnail &amp; price</span>
+                <div class="demo-component">
+                  <smart-search
+                    id="demo-custom"
+                    placeholder="Search products..."
+                    datasource="https://dummyjson.com/products/search?{{q}}"
+                    debounce="300"
+                    menu-max-height="420"
+                  ></smart-search>
+                </div>
+              </div>
+              <div class="code-pane">
+                <div class="code-header">
+                  <div class="code-dots">
+                    <span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span>
+                  </div>
+                  <span class="code-filename">main.js</span>
+                </div>
+                <pre>el.<span class="t-attr">resultItemRenderer</span> = (result) =&gt; {
+  <span class="t-kw">const</span> { metadata } = result
+
+  <span class="t-kw">const</span> card = document.<span class="t-fn">createElement</span>(<span class="t-str">'div'</span>)
+  card.style.cssText =
+    <span class="t-str">'display:flex;gap:12px;align-items:center'</span>
+
+  <span class="t-kw">const</span> img = document.<span class="t-fn">createElement</span>(<span class="t-str">'img'</span>)
+  img.src = metadata.thumbnail
+  img.width = 44; img.height = 44
+  img.style.cssText =
+    <span class="t-str">'border-radius:6px;object-fit:cover'</span>
+
+  <span class="t-kw">const</span> info = document.<span class="t-fn">createElement</span>(<span class="t-str">'div'</span>)
+  info.innerHTML = <span class="t-str">`
+    &lt;strong&gt;${result.label}&lt;/strong&gt;
+    &lt;div style="color:var(--ss-accent)"&gt;
+      $${metadata.price}
+    &lt;/div&gt;`</span>
+
+  card.<span class="t-fn">append</span>(img, info)
+  <span class="t-kw">return</span> card
+}</pre>
+              </div>
+            </div>
+          </div>
+        </section>
+        <!-- 5. Multi-select -->
+        <section class="section" id="multiselect">
+          <div class="section-header">
+            <div class="section-icon">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="9 11 12 14 22 4" />
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+              </svg>
+            </div>
+            <h2 class="section-title">Multi-select</h2>
+          </div>
+          <p class="section-desc">
+            Add the <code>multiselect</code> attribute to enable selecting multiple items. Selected items appear as
+            chips in the input. Listen to <code>ss-multiselect-change</code> or read
+            <code>el.selectedItems</code> directly.
+          </p>
+          <div class="demo-card">
+            <div class="demo-split">
+              <div class="demo-pane">
+                <span class="demo-pane-label">Live</span>
+                <div class="demo-component demo-component--multiselect">
+                  <smart-search
+                    id="demo-multiselect"
+                    placeholder="Select products..."
+                    datasource="https://dummyjson.com/products/search?{{q}}"
+                    debounce="300"
+                    multiselect
+                    close-menu-on-select="false"
+                  ></smart-search>
+                  <div id="demo-multiselect-selected" class="multiselect-selected-output" aria-live="polite"></div>
+                </div>
+              </div>
+              <div class="code-pane">
+                <div class="code-header">
+                  <div class="code-dots">
+                    <span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span>
+                  </div>
+                  <span class="code-filename">index.html</span>
+                </div>
+                <pre><span class="t-tag">&lt;smart-search</span>
+  <span class="t-attr">multiselect</span>
+  <span class="t-attr">close-menu-on-select</span>=<span class="t-val">"false"</span>
+  <span class="t-attr">datasource</span>=<span class="t-val">"..."</span>
+<span class="t-tag">&gt;&lt;/smart-search&gt;</span>
+
+el.<span class="t-fn">addEventListener</span>(
+  <span class="t-str">'ss-multiselect-change'</span>,
+  (e) =&gt; {
+    <span class="t-cm">// e.detail.items: SearchResult[]</span>
+    console.<span class="t-fn">log</span>(e.detail.items)
+  }
+)
+
+<span class="t-cm">// Read state directly</span>
+<span class="t-kw">const</span> selected = el.selectedItems</pre>
+              </div>
+            </div>
+          </div>
+        </section>
+        <!-- 6. Static Options -->
+        <section class="section" id="static">
+          <div class="section-header">
+            <div class="section-icon">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <ellipse cx="12" cy="5" rx="9" ry="3" />
+                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+              </svg>
+            </div>
+            <h2 class="section-title">Static Options</h2>
+          </div>
+          <p class="section-desc">
+            Pre-load an <code>options</code> array for purely client-side filtering &mdash; no network requests. The
+            component filters by <code>label</code> and <code>description</code> as you type.
+          </p>
+          <div class="demo-card">
+            <div class="demo-split">
+              <div class="demo-pane">
+                <span class="demo-pane-label">Live &mdash; no network requests</span>
+                <div class="demo-component">
+                  <smart-search
+                    placeholder="Search languages..."
+                    options='[{"value":"js","label":"JavaScript","description":"Dynamic web scripting language","group":"Frontend"},{"value":"ts","label":"TypeScript","description":"Typed superset of JavaScript","group":"Frontend"},{"value":"react","label":"React","description":"UI component library","group":"Frontend"},{"value":"vue","label":"Vue","description":"Progressive JavaScript framework","group":"Frontend"},{"value":"svelte","label":"Svelte","description":"Compiler-based UI framework","group":"Frontend"},{"value":"go","label":"Go","description":"Statically typed, compiled language","group":"Backend"},{"value":"rust","label":"Rust","description":"Systems programming language","group":"Backend"},{"value":"python","label":"Python","description":"General-purpose scripting language","group":"Backend"},{"value":"node","label":"Node.js","description":"JavaScript runtime for servers","group":"Backend"}]'
+                  ></smart-search>
+                </div>
+              </div>
+              <div class="code-pane">
+                <div class="code-header">
+                  <div class="code-dots">
+                    <span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span>
+                  </div>
+                  <span class="code-filename">index.html</span>
+                </div>
+                <pre>
+                          <span class="t-tag">&lt;smart-search</span>
+                          <span class="t-attr">placeholder</span>=<span class="t-val">"Search languages..."</span>
+                          <span class="t-attr">options</span>=<span class="t-val">'[
+                            {
+                              "value": "js",
+                              "label": "JavaScript",
+                              "description": "Web scripting",
+                              "group": "Frontend"
+                            },
+                            {
+                              "value": "go",
+                              "label": "Go",
+                              "description": "Systems language",
+                              "group": "Backend"
+                            }
+                          ]'</span>
+                          <span class="t-tag">&gt;&lt;/smart-search&gt;</span>
+
+                          <span class="t-cm">// Or set programmatically:</span>
+                          el.options = myItems
+
+                      </pre>
+              </div>
+            </div>
+          </div>
+        </section>
+        <!-- 7. Events Log -->
+        <section class="section" id="events">
+          <div class="section-header">
+            <div class="section-icon">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+              </svg>
+            </div>
+            <h2 class="section-title">Events Log</h2>
+          </div>
+          <p class="section-desc">
+            All interactions fire custom events on the element. Type, select, toggle a filter, or open the menu to see
+            them stream in the log below.
+          </p>
+          <div class="demo-card">
+            <div class="events-layout">
+              <div class="events-demo-pane">
+                <smart-search
+                  id="demo-events"
+                  placeholder="Interact to see events..."
+                  datasource="https://dummyjson.com/products/search?{{q}}"
+                  debounce="300"
+                  filters='[{"field":"category","value":"smartphones","label":"Smartphones"},{"field":"category","value":"laptops","label":"Laptops"}]'
+                ></smart-search>
+              </div>
+              <div class="event-log" id="event-log">
+                <div class="log-empty">Events will appear here as you interact&hellip;</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script>
+      const sidebarLinks = document.querySelectorAll('.sidebar-link[href^="#"]')
+      const mobileLinks = document.querySelectorAll('.mobile-nav-link[href^="#"]')
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              const id = entry.target.id
+
+              sidebarLinks.forEach((l) => l.classList.remove("active"))
+              const sLink = document.querySelector(`.sidebar-link[href="#${id}"]`)
+              if (sLink) sLink.classList.add("active")
+
+              mobileLinks.forEach((l) => l.classList.remove("active"))
+              const mLink = document.querySelector(`.mobile-nav-link[href="#${id}"]`)
+              if (mLink) {
+                mLink.classList.add("active")
+                mLink.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" })
+              }
+            }
+          }
+        },
+        { rootMargin: "-20% 0px -70% 0px" },
+      )
+      document.querySelectorAll(".section[id]").forEach((s) => observer.observe(s))
+    </script>
   </body>
 </html>

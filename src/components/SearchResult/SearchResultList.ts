@@ -4,10 +4,13 @@ import type { ResultItemRendererFn } from "@/types/datasource"
 import { highlight } from "@/utils/highlight"
 import { groupFlatItems } from "@/utils/group-items"
 import { h } from "@/utils/h"
+import { Check } from "lucide"
+import type { IconNode } from "lucide"
+import { createIcon } from "@/utils/icon"
 
 export interface SearchResultGroup<T extends Record<string, unknown> = Record<string, unknown>> {
   label: string
-  icon?: string
+  icon?: IconNode
   options: SearchResult<T>[]
 }
 
@@ -33,12 +36,37 @@ export class SearchResultList extends Component {
 
   #onSelect: SearchResultListOptions["onSelect"]
   #resultItemRenderer: ResultItemRendererFn | null = null
+  #selectedValues: Set<string> = new Set()
+  #highlightMatches = true
 
   set resultItemRenderer(fn: ResultItemRendererFn | null) {
     this.#resultItemRenderer = fn
   }
   get resultItemRenderer(): ResultItemRendererFn | null {
     return this.#resultItemRenderer
+  }
+
+  set highlightMatches(v: boolean) {
+    this.#highlightMatches = v
+  }
+  get highlightMatches(): boolean {
+    return this.#highlightMatches
+  }
+
+  setSelectedValues(values: string[]): void {
+    this.#selectedValues = new Set(values)
+    for (const item of this.querySelectorAll<SearchResultItem>(SearchResultItem.tagName)) {
+      const isSelected = this.#selectedValues.has(item.value)
+      item.selected = isSelected
+      const existingCheck = item.querySelector("svg[data-ss-check]")
+      if (isSelected && !existingCheck) {
+        const check = createIcon(Check, 14)
+        check.setAttribute("data-ss-check", "")
+        item.appendChild(check)
+      } else if (!isSelected && existingCheck) {
+        existingCheck.remove()
+      }
+    }
   }
 
   constructor({ onSelect }: SearchResultListOptions) {
@@ -72,7 +100,10 @@ export class SearchResultList extends Component {
   #appendGroup(group: SearchResultGroup, searchTerm: string): void {
     if (group.label) {
       const groupId = `ss-group-${SearchResultList.#groupCounter++}`
-      const header = h("div", { class: "ss-result-group-label", id: groupId, role: "presentation" }, group.label)
+      const labelChildren: (Node | string)[] = []
+      if (group.icon) labelChildren.push(createIcon(group.icon, 14))
+      labelChildren.push(group.label)
+      const header = h("div", { class: "ss-result-group-label", id: groupId, role: "presentation" }, ...labelChildren)
       const groupEl = h("div", { role: "group", "aria-labelledby": groupId, class: "ss-result-group" })
       for (const item of group.options) {
         groupEl.appendChild(this.#createItem(item, searchTerm))
@@ -91,12 +122,27 @@ export class SearchResultList extends Component {
       const content = this.#resultItemRenderer(result, searchTerm)
       return typeof content === "string" ? document.createTextNode(content) : content
     }
-    return highlight(result.label, searchTerm)
+    return this.#highlightMatches ? highlight(result.label, searchTerm) : document.createTextNode(result.label)
   }
 
   #createItem(result: SearchResult, searchTerm: string): SearchResultItem {
-    const item = new SearchResultItem({ result, onSelect: this.#onSelect })
-    item.replaceChildren(this.#renderContent(result, searchTerm))
+    const item = new SearchResultItem({
+      result,
+      onSelect: this.#onSelect,
+      selected: this.#selectedValues.has(result.value),
+    })
+    const content = this.#renderContent(result, searchTerm)
+    const labelSpan = document.createElement("span")
+    labelSpan.appendChild(typeof content === "string" ? document.createTextNode(content) : content)
+    const children: Node[] = []
+    if (result.icon) children.push(createIcon(result.icon, 16))
+    children.push(labelSpan)
+    if (this.#selectedValues.has(result.value)) {
+      const check = createIcon(Check, 14)
+      check.setAttribute("data-ss-check", "")
+      children.push(check)
+    }
+    item.replaceChildren(...children)
     return item
   }
 }

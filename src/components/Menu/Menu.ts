@@ -5,6 +5,7 @@ import { h } from "@/utils/h"
 export interface MenuOptions {
   anchor: HTMLElement
   onClose: () => void
+  id?: string
   maxHeight?: number | string
   offset?: number
   placement?: "bottom-start" | "bottom-end" | "top-start" | "top-end"
@@ -28,6 +29,7 @@ export class Menu extends Component {
   constructor(options: MenuOptions) {
     super()
     this.#options = options
+    if (options.id) this.id = options.id
   }
 
   get loading(): boolean {
@@ -111,6 +113,7 @@ export class Menu extends Component {
     this.#cleanupAutoUpdate = autoUpdate(anchor, this, () => {
       computePosition(anchor, this, {
         placement,
+        strategy: "fixed",
         middleware: [
           offset(offsetVal),
           flip({ fallbackPlacements: [placement.startsWith("bottom") ? "top-start" : "bottom-start"] }),
@@ -151,8 +154,8 @@ export class Menu extends Component {
 
   #onClickOutside = (e: PointerEvent): void => {
     const { anchor, onClose } = this.#options
-    const target = e.target as Node
-    if (!this.contains(target) && !anchor.contains(target)) {
+    const path = e.composedPath()
+    if (!path.includes(this) && !path.includes(anchor)) {
       onClose()
     }
   }
